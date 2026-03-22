@@ -63,7 +63,13 @@
         .nav-item:hover .trash-btn { opacity: 1; }
 
         /* --- Main Content --- */
-        .main { flex: 1; display: flex; flex-direction: column; position: relative; }
+        .main {
+            flex: 1;
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
         
         .top-bar { padding: 20px 30px; display: flex; align-items: center; justify-content: space-between; }
         
@@ -82,7 +88,11 @@
         .view-item:hover { background: var(--accent); color: white; }
         .view-item.active { color: var(--accent); }
 
-        .view-area { flex: 1; overflow-y: auto; padding: 0 30px 120px 30px; scroll-behavior: smooth; }
+        .view-area {
+            flex: 1; /* It grows to fill space */
+            overflow-y: auto; /* It becomes the scrollable area */
+            padding: 0 30px 120px 30px; /* Padding for the floating player bar on desktop */
+        }
         
         /* Views */
         .page-view { display: none; animation: fadeIn 0.3s; }
@@ -127,7 +137,16 @@
         .track-row.playing { color: var(--accent); font-weight: 600; }
         
         /* --- Player Bar --- */
-        .player-float {
+        .player-info, .player-volume {
+            width: 250px;
+        }
+        .player-volume {
+            display: flex;
+            justify-content: flex-end;
+            align-items: center;
+            gap: 10px;
+        }
+        .player-bar {
             position: absolute; bottom: 25px; left: 30px; right: 30px;
             height: 85px;
             background: rgba(20, 20, 25, 0.85);
@@ -177,22 +196,148 @@
             opacity: 0;
             transition: 0.2s;
         }
-        .player-float:hover input[type=range]::-webkit-slider-thumb { opacity: 1; }
+        .player-bar:hover input[type=range]::-webkit-slider-thumb { opacity: 1; }
 
         /* --- Modals --- */
         .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.7); display: none; align-items: center; justify-content: center; z-index: 200; backdrop-filter: blur(5px); }
         .modal { background: #18181b; padding: 30px; border-radius: 20px; width: 380px; border: 1px solid var(--glass-border); }
         .modal-btn { width: 100%; padding: 12px; background: var(--accent); border: none; color: white; border-radius: 10px; font-weight: 600; cursor: pointer; margin-top: 15px; }
 
+        /* --- Recent Folders List --- */
+        .folder-entry {
+            display: flex; align-items: center; justify-content: space-between;
+            padding: 12px 14px; border-radius: 10px; margin-bottom: 6px;
+            background: rgba(255,255,255,0.03); border: 1px solid var(--glass-border);
+            transition: 0.15s;
+        }
+        .folder-entry:hover { background: rgba(255,255,255,0.07); border-color: rgba(255,255,255,0.15); }
+        .folder-entry-info { flex: 1; cursor: pointer; }
+        .folder-entry-name { font-size: 14px; font-weight: 500; color: var(--text-main); margin-bottom: 3px; }
+        .folder-entry-date { font-size: 11px; color: var(--text-dim); font-family: monospace; }
+        .folder-entry-delete {
+            background: none; border: none; color: var(--text-dim); cursor: pointer;
+            font-size: 14px; padding: 6px; border-radius: 6px; transition: 0.15s;
+            opacity: 0;
+        }
+        .folder-entry:hover .folder-entry-delete { opacity: 1; }
+        .folder-entry-delete:hover { color: #ef4444; background: rgba(239,68,68,0.1); }
+        .fsa-not-supported { display: none; }
+
         .ctx-menu { position: fixed; background: #18181b; border: 1px solid var(--glass-border); padding: 6px; border-radius: 12px; display: none; z-index: 100; min-width: 180px; }
         .ctx-item { padding: 10px 12px; font-size: 13px; color: var(--text-dim); cursor: pointer; border-radius: 8px; }
         .ctx-item:hover { background: var(--accent); color: white; }
         .ctx-divider { height: 1px; background: var(--glass-border); margin: 4px 6px; }
 
+        .hamburger-btn {
+            display: none;
+            background: none;
+            border: 1px solid var(--glass-border);
+            color: var(--text-main);
+            font-size: 20px;
+            padding: 8px 12px;
+            border-radius: 10px;
+            cursor: pointer;
+        }
+        .sidebar-overlay {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,0.5);
+            z-index: 99;
+            backdrop-filter: blur(2px);
+        }
+
+        @media (max-width: 768px) {
+            /* --- General Safeguards --- */
+            * { min-width: 0; }
+            html { font-size: 14px; }
+            
+            /* --- New Layout Model --- */
+            body {
+                height: auto; /* Allow body to have natural height and scroll */
+                overflow-y: auto; /* Re-enable vertical scrolling */
+                overflow-x: hidden;
+                padding-bottom: 220px; /* Add space at the bottom of the whole page for the fixed player bar */
+            }
+             .main {
+                overflow: visible; /* Allow content to flow */
+            }
+            .view-area {
+                overflow-y: visible; /* Disable scrolling on this element */
+                padding: 0 15px;
+            }
+
+            /* --- Sidebar & Overlay (no change) --- */
+            body.sidebar-visible .sidebar-overlay { display: block; }
+            .hamburger-btn { display: block; flex-shrink: 0; }
+            .sidebar {
+                position: fixed;
+                left: -280px;
+                width: 260px;
+                top: 0; bottom: 0;
+                transition: left 0.3s ease-in-out;
+                box-shadow: 10px 0 30px rgba(0,0,0,0.3);
+                z-index: 200; /* Higher z-index */
+            }
+            body.sidebar-visible .sidebar { left: 0; }
+
+            /* --- Top Bar (no change) --- */
+            .top-bar {
+                padding: 10px 15px;
+                gap: 10px;
+            }
+            .top-bar > div:first-child { flex: 1; }
+            .search-box { flex: 1; }
+            .view-options { flex-shrink: 0; }
+
+            /* --- Track List (no change) --- */
+            .t-title {
+                overflow: hidden;
+                text-overflow: ellipsis;
+                white-space: nowrap;
+            }
+            .track-row {
+                grid-template-columns: 25px 1fr;
+                padding: 12px 10px;
+                gap: 15px;
+            }
+            .track-row > div:nth-child(3), .track-row > div:nth-child(4) { display: none; }
+
+            /* --- NEW Player Bar --- */
+            .player-bar {
+                position: fixed; /* Pin to the viewport */
+                bottom: 0;
+                left: 0;
+                right: 0;
+                z-index: 150;
+
+                /* Reset desktop styles */
+                border-radius: 0;
+                box-shadow: 0 -5px 20px rgba(0,0,0,0.3);
+                border-top: 1px solid var(--glass-border);
+                
+                /* Vertical layout styles from before */
+                display: flex;
+                flex-direction: column;
+                height: auto;
+                padding: 15px;
+                gap: 12px;
+            }
+            .progress-bar {
+                max-width: 100%;
+                order: 1;
+            }
+            .btn-group {
+                order: 2;
+                width: 100%;
+                justify-content: center;
+            }
+        }
     </style>
 </head>
 <body onclick="handleGlobalClick(event)">
 
+<div class="sidebar-overlay" onclick="toggleSidebar()"></div>
 <aside class="sidebar">
     <div class="logo">FH's Web MP3 Player</div>
 
@@ -220,7 +365,8 @@
 
 <main class="main">
     <div class="top-bar">
-        <div style="display: flex; align-items: center; gap: 20px;">
+        <div style="display: flex; align-items: center; gap: 15px; width: 100%;">
+            <button class="hamburger-btn" onclick="toggleSidebar()">☰</button>
             <input type="text" class="search-box" id="search" placeholder="Search tracks..." oninput="render()">
             <div class="view-options">
                 <button class="view-btn" onclick="toggleSortMenu()">☰</button>
@@ -238,10 +384,6 @@
     <div class="view-area">
         
         <div id="view-library" class="page-view active">
-            <div id="restore-banner" style="display:none; background:rgba(217,70,239,0.1); border:1px solid var(--accent); padding:15px; border-radius:12px; margin-bottom:20px; align-items:center; justify-content:space-between">
-                <span style="color:var(--accent)">Previous session found.</span>
-                <button onclick="restoreSession()" style="background:var(--accent); color:white; border:none; padding:8px 16px; border-radius:8px; cursor:pointer; font-weight:600">Restore</button>
-            </div>
             <div id="track-list">
                 <div style="text-align:center; padding: 100px; opacity: 0.5;">
                     <h2>No Music Loaded</h2>
@@ -255,16 +397,71 @@
             
             <div class="settings-card">
                 <h3>Music Source</h3>
-                <p style="font-size:13px; color:var(--text-dim); margin-bottom:15px">Select the folder containing your audio files (.mp3, .ogg, .wav).</p>
-                <button class="settings-btn" onclick="pickFolder('music')">Select Music Folder</button>
-                <div class="path-display" id="path-music">No folder selected</div>
+
+                <div id="fsa-section">
+                    <p style="font-size:13px; color:var(--text-dim); margin-bottom:12px">Open a folder — the app will remember it for next time.</p>
+                    <button class="settings-btn" onclick="openFolderPicker()">
+                        📂 Open Music Folder
+                    </button>
+                    <div class="path-display" id="path-music" style="margin-top:10px">No folder selected</div>
+                </div>
+
+                <div id="fsa-not-supported-banner" class="fsa-not-supported" style="background:rgba(239,68,68,0.08); border:1px solid rgba(239,68,68,0.2); border-radius:10px; padding:10px 14px; font-size:12px; color:#f87171; margin-bottom:14px;">
+                    Your browser does not support the Folder Picker API. Please use the manual file select below.
+                </div>
+
+                <div style="margin-top:20px; padding-top:16px; border-top: 1px solid var(--glass-border);">
+                    <p style="font-size:12px; color:var(--text-dim); margin-bottom:10px; font-weight:600; text-transform:uppercase; letter-spacing:1px;">Fallback — Firefox / manual file select</p>
+                    <p style="font-size:13px; color:var(--text-dim); margin-bottom:10px;">Select individual audio files (.mp3, .ogg, .wav). Folder history is not saved with this method.</p>
+                    <label class="settings-btn" style="background:rgba(255,255,255,0.05);">
+                        Select Files
+                        <input type="file" id="music-input" multiple webkitdirectory style="display: none;">
+                    </label>
+                </div>
             </div>
 
-            <div class="settings-card">
+            <div class="settings-card" id="recent-folders-card">
+                <h3>Recent Folders</h3>
+                <p style="font-size:13px; color:var(--text-dim); margin-bottom:14px">Click a folder to reload it. Your browser will ask for permission once.</p>
+                <div id="recent-folders-list">
+                    <div style="font-size:13px; color:var(--text-dim); padding: 8px 0;">No folders saved yet.</div>
+                </div>
+            </div>
+
+            <div class="settings-card" id="playlist-card-local">
                 <h3>Playlist Storage</h3>
-                <p style="font-size:13px; color:var(--text-dim); margin-bottom:15px">Select where playlist files (.json) should be saved.</p>
-                <button class="settings-btn" onclick="pickFolder('playlist')">Select Playlist Folder</button>
-                <div class="path-display" id="path-playlist">No folder selected</div>
+                <p style="font-size:13px; color:var(--text-dim); margin-bottom:15px">On this device, playlists are saved to the browser's local storage.</p>
+            </div>
+
+            <div class="settings-card" id="playlist-card-import-export">
+                <h3>Playlist Folder</h3>
+                <p style="font-size:13px; color:var(--text-dim); margin-bottom:12px">Open a folder of <code style="font-size:11px; background:rgba(255,255,255,0.07); padding:2px 5px; border-radius:4px;">.json</code> playlist files — all will be imported and the folder remembered for next time.</p>
+                <button class="settings-btn" onclick="openPlaylistFolderPicker()" style="margin-bottom:10px;">
+                    🗂 Open Playlist Folder
+                </button>
+                <div class="path-display" id="path-playlists">No playlist folder selected</div>
+
+                <div style="margin-top:20px; padding-top:16px; border-top:1px solid var(--glass-border);">
+                    <p style="font-size:12px; color:var(--text-dim); margin-bottom:10px; font-weight:600; text-transform:uppercase; letter-spacing:1px;">Fallback — select individual files</p>
+                    <label class="settings-btn" style="background:rgba(255,255,255,0.05); margin-bottom:10px;">
+                        Import Playlist Files (.json)
+                        <input type="file" id="playlist-import-input" accept=".json" multiple style="display: none;">
+                    </label>
+                </div>
+
+                <div style="margin-top:20px; padding-top:16px; border-top:1px solid var(--glass-border);">
+                    <p style="font-size:12px; color:var(--text-dim); margin-bottom:10px; font-weight:600; text-transform:uppercase; letter-spacing:1px;">Manual backup</p>
+                    <button class="settings-btn" onclick="showPlaylistData()" style="background: rgba(255,255,255,0.05); margin-bottom: 10px;">View & Copy Playlist Data</button>
+                    <button class="settings-btn" onclick="openClipboardImportModal()" style="background: rgba(255,255,255,0.05);">Import from Clipboard</button>
+                </div>
+            </div>
+
+            <div class="settings-card" id="recent-playlist-folders-card">
+                <h3>Recent Playlist Folders</h3>
+                <p style="font-size:13px; color:var(--text-dim); margin-bottom:14px">Click a folder to re-import all playlists inside it.</p>
+                <div id="recent-playlist-folders-list">
+                    <div style="font-size:13px; color:var(--text-dim); padding:8px 0;">No playlist folders saved yet.</div>
+                </div>
             </div>
 
             <div class="settings-card">
@@ -282,25 +479,22 @@
             <p style="font-size:13px; color:var(--text-dim); margin-bottom:15px">Welcome to FH's Web MP3 Player! This guide will help you get started and make the most of your local music playback experience.</p>
 
             <div class="settings-card">
-                <h3>1. Getting Started: Setting Up Your Music & Playlists</h3>
-                <p style="font-size:13px; color:var(--text-dim); margin-bottom:15px">FH's Web MP3 Player works directly with your local files without needing to upload anything.</p>
+                <h3>1. Getting Started: Loading Music & Using Playlists</h3>
+                <p style="font-size:13px; color:var(--text-dim); margin-bottom:15px">This player works directly with your local files without needing to upload anything.</p>
                 
-                <h4>Select Music Folder:</h4>
+                <h4>Loading Your Music:</h4>
                 <ul style="font-size:13px; color:var(--text-dim); margin-bottom:15px; padding-left: 20px;">
-                    <li>Go to the <b>Settings</b> view (click "Settings" in the sidebar).</li>
-                    <li>Under "Music Source," click the "Select Music Folder" button.</li>
-                    <li>A file picker will appear. Navigate to and select the main folder where your music files (MP3, OGG, WAV) are stored. The player will scan this folder and its subfolders for audio files.</li>
-                    <li>You'll see a progress indicator as the player analyzes your tracks and extracts details like duration.</li>
+                    <li>Go to the <b>Settings</b> view.</li>
+                    <li>Click the "Select Music" button.</li>
+                    <li>A file picker will appear. Select the music files you want to load. On most desktop browsers, you can also select an entire folder to load all the music within it.</li>
+                    <li>Because of browser limitations, you will need to re-select your music each time you open the app.</li>
                 </ul>
 
-                <h4>Select Playlist Folder:</h4>
+                <h4>Using Playlists:</h4>
                 <ul style="font-size:13px; color:var(--text-dim); margin-bottom:15px; padding-left: 20px;">
-                    <li>In the <b>Settings</b> view, under "Playlist Storage," click the "Select Playlist Folder" button.</li>
-                    <li>Choose a folder where you want your playlists (.json files) to be saved. This allows you to manage your playlists locally.</li>
+                    <li>Playlists are saved automatically to your browser's storage for this site.</li>
+                    <li>This means they are tied to your specific browser on your specific device, and are no longer saved as portable `.json` files.</li>
                 </ul>
-
-                <h4>Session Restoration:</h4>
-                <p style="font-size:13px; color:var(--text-dim); margin-bottom:15px">The player remembers the folders you selected in previous sessions. If you return, a "Previous session found." banner will appear. Click "Restore" to quickly load your music and playlists without re-selecting folders.</p>
             </div>
 
             <div class="settings-card">
@@ -397,31 +591,33 @@
             <p style="font-size:13px; color:var(--text-dim); margin-top:20px;">Enjoy your music!</p>
         </div>
 
+
     </div>
 
-    <div class="player-float">
-        <div style="width: 250px;">
+    <div class="player-bar">
+        <div class="player-info">
             <div id="np-title" style="font-weight:600; color:white; margin-bottom:4px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis"></div>
             <div id="np-artist" style="font-size:12px; color:var(--text-dim)"></div>
         </div>
 
         <div class="controls-center">
-            <div class="btn-group">
-                <button class="btn-icon" id="btn-shuffle" onclick="toggleShuffle()" title="Shuffle">Shuffle</button>
-                <button class="btn-icon" onclick="prev()">Prev</button>
-                <div class="play-fab" onclick="togglePlay()" id="play-icon">Play</div>
-                <button class="btn-icon" onclick="next()">Next</button>
-                <button class="btn-icon" style="opacity:0; cursor:default">Repeat</button> </div>
             <div class="progress-bar">
                 <span id="t-cur">0:00</span>
                 <input type="range" id="seek" value="0" step="0.1">
                 <span id="t-dur">0:00</span>
             </div>
+            <div class="btn-group">
+                <button class="btn-icon" id="btn-shuffle" onclick="toggleShuffle()" title="Shuffle">Shuffle</button>
+                <button class="btn-icon" onclick="prev()">Prev</button>
+                <div class="play-fab" onclick="togglePlay()" id="play-icon">Play</div>
+                <button class="btn-icon" onclick="next()">Next</button>
+                <button class="btn-icon" id="btn-repeat" onclick="toggleRepeat()" title="Repeat one">Repeat</button>
+            </div>
         </div>
 
-        <div style="width: 250px; display:flex; justify-content:flex-end; align-items:center; gap:10px">
+        <div class="player-volume">
             <span>Volume</span>
-            <input type="range" id="vol" max="1" step="0.05" value="0.8" style="width:80px">
+            <input type="range" id="vol" max="1" step="0.05" value="0.5" style="width:80px">
         </div>
     </div>
 </main>
@@ -429,12 +625,15 @@
 <div class="ctx-menu" id="ctx-menu">
     <div class="ctx-item" onclick="playSelected()">Play Selection</div>
     <div class="ctx-item" onclick="openAddToModal()">Add to Playlist...</div>
+    <div class="ctx-divider" id="ctx-playlist-divider" style="display:none;"></div>
+    <div class="ctx-item" id="ctx-remove-item" style="display:none;" onclick="removeSelectedFromPlaylist()">Remove from Playlist</div>
 </div>
 
 <div class="modal-overlay" id="new-p-modal">
     <div class="modal" onclick="event.stopPropagation()">
         <h3>New Playlist</h3>
         <input type="text" id="new-p-name" class="search-box" placeholder="Name" style="width:100%; margin:0">
+        <div id="new-p-hint" style="font-size:11px; color:var(--text-dim); margin-top:10px; padding:8px 10px; background:rgba(255,255,255,0.04); border-radius:8px; line-height:1.5;"></div>
         <button class="modal-btn" onclick="createPlaylist()">Create</button>
         <button class="modal-btn" style="background:#27272a; margin-top:10px" onclick="closeModals()">Cancel</button>
     </div>
@@ -448,48 +647,89 @@
     </div>
 </div>
 
+<div class="modal-overlay" id="raw-data-modal">
+    <div class="modal" onclick="event.stopPropagation()" style="width: 500px;">
+        <h3>Raw Playlist Data</h3>
+        <p style="font-size:12px; color:var(--text-dim); margin-bottom:15px;">This is the raw JSON data for your playlists stored in this browser. You can copy it as a manual backup.</p>
+        <pre id="raw-data-content" style="background: #09090b; padding: 15px; border-radius: 8px; max-height: 300px; overflow-y: auto; font-size: 12px; white-space: pre-wrap; word-break: break-all;"></pre>
+        <button class="modal-btn" onclick="copyPlaylistData()">Copy to Clipboard</button>
+        <button class="modal-btn" style="background:#27272a; margin-top:10px" onclick="closeModals()">Close</button>
+    </div>
+</div>
+
+<div class="modal-overlay" id="clipboard-import-modal">
+    <div class="modal" onclick="event.stopPropagation()" style="width: 500px;">
+        <h3>Import from Clipboard</h3>
+        <p style="font-size:12px; color:var(--text-dim); margin-bottom:15px;">Paste your raw JSON playlist data into the box below.</p>
+        <textarea id="clipboard-input-area" style="width: 100%; height: 200px; background: #09090b; color: var(--text-main); border: 1px solid var(--glass-border); border-radius: 8px; font-size: 12px; resize: vertical;"></textarea>
+        <button class="modal-btn" onclick="processClipboardImport()">Import Data</button>
+        <button class="modal-btn" style="background:#27272a; margin-top:10px" onclick="closeModals()">Cancel</button>
+    </div>
+</div>
+
 <script>
-    // --- State ---
-    let library = [];       // All tracks
-    let activeQueue = [];   // Currently playing queue (visible)
-    let playQueue = [];     // Internal queue logic (handles shuffle)
-    let playlists = {};
-    let selectedIds = new Set();
-    
-    let musicHandle = null;
-    let playlistHandle = null;
-    
-    let currentTrackId = null; 
-    let isShuffled = false;
-    let currentView = 'library'; // 'library', 'settings', or playlistName
-    let sortMode = 'alphabetical'; // 'alphabetical', 'length', 'format'
-    let sortOrder = 'asc'; // 'asc', 'desc'
-    
-    const audio = new Audio();
-
-    // --- Init ---
-    window.onload = async () => {
-        // Load handles from DB
-        const mh = await getDB('musicHandle');
-        const ph = await getDB('playlistHandle');
+        // --- State ---
+        let library = [];       // All tracks
+        let activeQueue = [];   // Currently playing queue (visible)
+        let playQueue = [];     // Internal queue logic (handles shuffle)
+        let playlists = {};
+        let selectedIds = new Set();
         
-        if (mh) {
-            musicHandle = mh;
-            document.getElementById('restore-banner').style.display = 'flex';
-            document.getElementById('path-music').innerText = "Stored from previous session";
-        }
-        if (ph) {
-            playlistHandle = ph;
-            document.getElementById('path-playlist').innerText = "Stored from previous session";
-            refreshPlaylists();
-        }
+        // File system access is no longer used for playlists.
         
-        const volSlider = document.getElementById('vol');
-        volSlider.style.setProperty('--value-percent', `${volSlider.value * 100}%`);
+        let currentTrackId = null; 
+        let isShuffled = false;
+        let isRepeat = false;
+        let currentView = 'library'; // 'library', 'settings', or playlistName
+        let sortMode = 'alphabetical'; // 'alphabetical', 'length', 'format'
+        let sortOrder = 'asc'; // 'asc', 'desc'
+        
+        const audio = new Audio();
+    
+            // --- Init ---
+            window.onload = async () => {
+                await loadConfig();
+                await initDB();
 
-        setupKeyboardShortcuts();
-    };
+                // Show fallback banner if File System Access API is not available
+                if (!('showDirectoryPicker' in window)) {
+                    document.getElementById('fsa-not-supported-banner').style.display = 'block';
+                }
 
+                await renderFolderList();
+                await renderPlaylistFolderList();
+
+                document.getElementById('music-input').onchange = (e) => scanMusic(e.target.files);
+
+                // Multi-file playlist fallback input
+                document.getElementById('playlist-import-input').onchange = async (e) => {
+                    const files = Array.from(e.target.files);
+                    if (!files.length) return;
+                    const collected = {};
+                    let skipped = 0;
+                    for (const file of files) {
+                        try {
+                            const text = await file.text();
+                            const parsed = JSON.parse(text);
+                            if (Array.isArray(parsed)) {
+                                collected[file.name.replace(/\.json$/i, '')] = parsed;
+                            } else if (parsed && typeof parsed === 'object') {
+                                Object.assign(collected, parsed);
+                            }
+                        } catch { skipped++; }
+                    }
+                    const count = await mergePlaylistsSilent(collected);
+                    const msg = count > 0
+                        ? `✓ Imported ${count} playlist(s) from ${files.length - skipped} file(s).`
+                        : 'No valid playlists found in the selected files.';
+                    document.getElementById('path-playlists').innerText = msg;
+                    refreshPlaylists();
+                    e.target.value = '';
+                };
+
+                setupKeyboardShortcuts();
+                refreshPlaylists();
+            };
     // --- Keyboard Shortcuts ---
     function setupKeyboardShortcuts() {
         document.addEventListener('keydown', (e) => {
@@ -513,71 +753,343 @@
         });
     }
 
-    // --- Folder Logic ---
-    async function restoreSession() {
-        if (!musicHandle) return;
-        const perm = await musicHandle.requestPermission({ mode: 'read' });
-        if (perm === 'granted') {
-            document.getElementById('restore-banner').style.display = 'none';
-            scanMusic(musicHandle);
-            switchView('library');
+    // --- IndexedDB: Folder Handle Persistence ---
+    const IDB_NAME = 'fh-mp3-db';
+    const IDB_VERSION = 1;
+    const IDB_STORE = 'folders';
+    let idb = null;
+
+    function initDB() {
+        return new Promise((resolve, reject) => {
+            const req = indexedDB.open(IDB_NAME, IDB_VERSION);
+            req.onupgradeneeded = (e) => {
+                const database = e.target.result;
+                if (!database.objectStoreNames.contains(IDB_STORE)) {
+                    database.createObjectStore(IDB_STORE, { keyPath: 'id', autoIncrement: true });
+                }
+            };
+            req.onsuccess = (e) => { idb = e.target.result; resolve(); };
+            req.onerror = (e) => { console.error('IndexedDB open failed:', e.target.error); resolve(); };
+        });
+    }
+
+    function idbGetAll() {
+        return new Promise((resolve, reject) => {
+            if (!idb) return resolve([]);
+            const tx = idb.transaction(IDB_STORE, 'readonly');
+            const req = tx.objectStore(IDB_STORE).getAll();
+            req.onsuccess = () => resolve(req.result || []);
+            req.onerror = () => resolve([]);
+        });
+    }
+
+    function idbAdd(entry) {
+        return new Promise((resolve, reject) => {
+            if (!idb) return resolve(null);
+            const tx = idb.transaction(IDB_STORE, 'readwrite');
+            const req = tx.objectStore(IDB_STORE).add(entry);
+            req.onsuccess = (e) => resolve(e.target.result);
+            req.onerror = () => resolve(null);
+        });
+    }
+
+    function idbPut(entry) {
+        return new Promise((resolve) => {
+            if (!idb) return resolve();
+            const tx = idb.transaction(IDB_STORE, 'readwrite');
+            tx.objectStore(IDB_STORE).put(entry);
+            tx.oncomplete = () => resolve();
+            tx.onerror = () => resolve();
+        });
+    }
+
+    function idbDelete(id) {
+        return new Promise((resolve) => {
+            if (!idb) return resolve();
+            const tx = idb.transaction(IDB_STORE, 'readwrite');
+            tx.objectStore(IDB_STORE).delete(id);
+            tx.oncomplete = () => resolve();
+            tx.onerror = () => resolve();
+        });
+    }
+
+    // --- File System Access API ---
+    async function openFolderPicker() {
+        if (!('showDirectoryPicker' in window)) {
+            document.getElementById('fsa-not-supported-banner').style.display = 'block';
+            return;
+        }
+        try {
+            const handle = await window.showDirectoryPicker({ mode: 'read' });
+            await scanDirectoryHandle(handle, null);
+        } catch (e) {
+            if (e.name !== 'AbortError') console.error('Folder picker error:', e);
         }
     }
 
-    async function pickFolder(type) {
+    async function reloadFolder(id) {
+        const folders = await idbGetAll();
+        const entry = folders.find(f => f.id === id);
+        if (!entry) return alert('Folder record not found. It may have been removed.');
         try {
-            const handle = await window.showDirectoryPicker();
-            if (type === 'music') {
-                musicHandle = handle;
-                await setDB('musicHandle', handle);
-                document.getElementById('path-music').innerText = handle.name;
-                scanMusic(handle);
-            } else {
-                playlistHandle = handle;
-                await setDB('playlistHandle', handle);
-                document.getElementById('path-playlist').innerText = handle.name;
-                refreshPlaylists();
-            }
-        } catch(e) { console.log("Cancelled"); }
+            const perm = await entry.handle.requestPermission({ mode: 'read' });
+            if (perm !== 'granted') return alert('Permission denied. Please try again.');
+            await scanDirectoryHandle(entry.handle, entry);
+        } catch (e) {
+            console.error('reloadFolder error:', e);
+            alert('Could not access this folder. It may have been moved or deleted.');
+        }
     }
 
-    async function scanMusic(handle) {
-        document.getElementById('track-list').innerHTML = '<div style="padding:50px; text-align:center">Scanning Files...</div>';
+    async function scanDirectoryHandle(handle, existingEntry) {
+        document.getElementById('track-list').innerHTML = '<div style="padding:50px; text-align:center">Scanning folder...</div>';
         library = [];
-        
-        async function traverse(dir) {
-            for await (const entry of dir.values()) {
-                if (entry.kind === 'file') {
-                    // Support mp3, ogg, wav
-                    if (/\.(mp3|ogg|wav)$/i.test(entry.name)) {
-                        const type = entry.name.split('.').pop();
-                        const baseName = entry.name.replace(/\.(mp3|ogg|wav)$/i, '');
-                        let creator = '';
-                        let songName = baseName;
 
-                        const parts = baseName.split(' - ');
-                        if (parts.length >= 2) {
-                            creator = parts[0].trim();
-                            songName = parts.slice(1).join(' - ').trim();
-                        }
-                        
-                        library.push({
-                            id: Math.random().toString(36).substr(2, 9),
-                            name: baseName, // Keep original full name for general reference if needed
-                            creator: creator,
-                            songName: songName,
-                            handle: entry,
-                            type: type,
-                            duration: '--:--'
-                        });
+        for await (const [name, fileHandle] of handle.entries()) {
+            if (fileHandle.kind === 'file' && /\.(mp3|ogg|wav)$/i.test(name)) {
+                const file = await fileHandle.getFile();
+                const type = name.split('.').pop();
+                const baseName = name.replace(/\.(mp3|ogg|wav)$/i, '');
+                let creator = '', songName = baseName;
+                const parts = baseName.split(' - ');
+                if (parts.length >= 2) {
+                    creator = parts[0].trim();
+                    songName = parts.slice(1).join(' - ').trim();
+                }
+                library.push({
+                    id: Math.random().toString(36).substr(2, 9),
+                    name: baseName, creator, songName, file, type, duration: '--:--'
+                });
+            }
+        }
+
+        library.sort((a, b) => a.name.localeCompare(b.name));
+        activeQueue = [...library];
+        resetPlayQueue();
+        document.getElementById('track-count').innerText = `${library.length} tracks`;
+        document.getElementById('path-music').innerText = `${handle.name}  ·  ${library.length} track(s)`;
+        render();
+        switchView('library');
+
+        // Save or update folder entry in IndexedDB
+        if (existingEntry) {
+            existingEntry.lastOpened = new Date().toISOString();
+            existingEntry.type = 'music';
+            await idbPut(existingEntry);
+        } else {
+            // Check for duplicate name and update instead of adding duplicate
+            const all = await idbGetAll();
+            const dupe = all.find(f => f.name === handle.name && (f.type === 'music' || !f.type));
+            if (dupe) {
+                dupe.handle = handle;
+                dupe.lastOpened = new Date().toISOString();
+                dupe.type = 'music';
+                await idbPut(dupe);
+            } else {
+                await idbAdd({ name: handle.name, handle, lastOpened: new Date().toISOString(), type: 'music' });
+            }
+        }
+        await renderFolderList();
+
+        // Post-scan: load durations
+        for (let i = 0; i < library.length; i++) {
+            const track = library[i];
+            if (currentView === 'library') {
+                document.getElementById('track-list').innerHTML = `<div style="padding:50px; text-align:center">Analyzing ${i + 1}/${library.length}...<br><span style="opacity:0.6">${track.name}</span></div>`;
+            }
+            track.duration = await getDuration(track.file);
+        }
+        render();
+    }
+
+    async function renderFolderList() {
+        const container = document.getElementById('recent-folders-list');
+        if (!container) return;
+        const all = await idbGetAll();
+        const folders = all.filter(f => f.type === 'music' || !f.type); // treat untagged legacy entries as music
+        if (folders.length === 0) {
+            container.innerHTML = '<div style="font-size:13px; color:var(--text-dim); padding:8px 0;">No folders saved yet.</div>';
+            return;
+        }
+        folders.sort((a, b) => new Date(b.lastOpened) - new Date(a.lastOpened));
+        container.innerHTML = '';
+        folders.forEach(entry => {
+            const dateStr = new Date(entry.lastOpened).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' });
+            const div = document.createElement('div');
+            div.className = 'folder-entry';
+            div.innerHTML = `
+                <div class="folder-entry-info" onclick="reloadFolder(${entry.id})">
+                    <div class="folder-entry-name">📁 ${entry.name}</div>
+                    <div class="folder-entry-date">Last opened: ${dateStr}</div>
+                </div>
+                <button class="folder-entry-delete" onclick="removeFolderEntry(${entry.id})" title="Remove from list">✕</button>
+            `;
+            container.appendChild(div);
+        });
+    }
+
+    async function renderPlaylistFolderList() {
+        const container = document.getElementById('recent-playlist-folders-list');
+        if (!container) return;
+        const all = await idbGetAll();
+        const folders = all.filter(f => f.type === 'playlist');
+        if (folders.length === 0) {
+            container.innerHTML = '<div style="font-size:13px; color:var(--text-dim); padding:8px 0;">No playlist folders saved yet.</div>';
+            return;
+        }
+        folders.sort((a, b) => new Date(b.lastOpened) - new Date(a.lastOpened));
+        container.innerHTML = '';
+        folders.forEach(entry => {
+            const dateStr = new Date(entry.lastOpened).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' });
+            const div = document.createElement('div');
+            div.className = 'folder-entry';
+            div.innerHTML = `
+                <div class="folder-entry-info" onclick="reloadPlaylistFolder(${entry.id})">
+                    <div class="folder-entry-name">🗂 ${entry.name}</div>
+                    <div class="folder-entry-date">Last imported: ${dateStr}</div>
+                </div>
+                <button class="folder-entry-delete" onclick="removePlaylistFolderEntry(${entry.id})" title="Remove from list">✕</button>
+            `;
+            container.appendChild(div);
+        });
+    }
+
+    async function removeFolderEntry(id) {
+        await idbDelete(id);
+        await renderFolderList();
+    }
+
+    async function removePlaylistFolderEntry(id) {
+        await idbDelete(id);
+        await renderPlaylistFolderList();
+    }
+
+    // --- Playlist Folder (FSA) ---
+    async function openPlaylistFolderPicker() {
+        if (!('showDirectoryPicker' in window)) {
+            alert('Your browser does not support the Folder Picker API. Please use "Import Playlist Files" below.');
+            return;
+        }
+        try {
+            const handle = await window.showDirectoryPicker({ mode: 'readwrite' });
+            await scanPlaylistFolder(handle, null);
+        } catch (e) {
+            if (e.name !== 'AbortError') console.error('Playlist folder picker error:', e);
+        }
+    }
+
+    async function reloadPlaylistFolder(id) {
+        const all = await idbGetAll();
+        const entry = all.find(f => f.id === id);
+        if (!entry) return alert('Folder record not found. It may have been removed.');
+        try {
+            const perm = await entry.handle.requestPermission({ mode: 'readwrite' });
+            if (perm !== 'granted') return alert('Permission denied. Please try again.');
+            await scanPlaylistFolder(entry.handle, entry);
+        } catch (e) {
+            console.error('reloadPlaylistFolder error:', e);
+            alert('Could not access this folder. It may have been moved or deleted.');
+        }
+    }
+
+    async function scanPlaylistFolder(handle, existingEntry) {
+        const statusEl = document.getElementById('path-playlists');
+        statusEl.innerText = `Scanning "${handle.name}"…`;
+
+        const collected = {};
+        let fileCount = 0;
+
+        for await (const [name, fileHandle] of handle.entries()) {
+            if (fileHandle.kind === 'file' && name.toLowerCase().endsWith('.json')) {
+                try {
+                    const file = await fileHandle.getFile();
+                    const text = await file.text();
+                    const parsed = JSON.parse(text);
+                    if (Array.isArray(parsed)) {
+                        // Single playlist array — use filename (minus .json) as name
+                        const plName = name.replace(/\.json$/i, '');
+                        collected[plName] = parsed;
+                        fileCount++;
+                    } else if (parsed && typeof parsed === 'object') {
+                        // Multi-playlist object — merge all keys
+                        Object.assign(collected, parsed);
+                        fileCount++;
                     }
-                } else if (entry.kind === 'directory') {
-                    await traverse(entry);
+                } catch (e) {
+                    console.warn(`Skipped "${name}": not valid JSON.`, e);
                 }
             }
         }
-        await traverse(handle);
-        // Default Alphabetical Sort
+
+        if (Object.keys(collected).length === 0) {
+            statusEl.innerText = `No valid playlist files found in "${handle.name}".`;
+            return;
+        }
+
+        const importedCount = await mergePlaylistsSilent(collected);
+        statusEl.innerText = `✓ Imported ${importedCount} playlist(s) from ${fileCount} file(s) in "${handle.name}"`;
+
+        // Save / update entry in IndexedDB
+        if (existingEntry) {
+            existingEntry.lastOpened = new Date().toISOString();
+            existingEntry.type = 'playlist';
+            await idbPut(existingEntry);
+        } else {
+            const all = await idbGetAll();
+            const dupe = all.find(f => f.name === handle.name && f.type === 'playlist');
+            if (dupe) {
+                dupe.handle = handle;
+                dupe.lastOpened = new Date().toISOString();
+                await idbPut(dupe);
+            } else {
+                await idbAdd({ name: handle.name, handle, lastOpened: new Date().toISOString(), type: 'playlist' });
+            }
+        }
+        await renderPlaylistFolderList();
+        refreshPlaylists();
+    }
+
+    // Silent version of mergePlaylists — no confirm/alert, returns count of imported playlists
+    async function mergePlaylistsSilent(playlistsToImport) {
+        const count = Object.keys(playlistsToImport).length;
+        if (count === 0) return 0;
+        Object.assign(playlists, playlistsToImport);
+        savePlaylists();
+        return count;
+    }
+
+    async function scanMusic(files) {
+        if (!files.length) return;
+
+        document.getElementById('track-list').innerHTML = '<div style="padding:50px; text-align:center">Scanning Files...</div>';
+        document.getElementById('path-music').innerText = `${files.length} file(s) selected`;
+        library = [];
+        
+        for (const file of files) {
+            if (/\.(mp3|ogg|wav)$/i.test(file.name)) {
+                const type = file.name.split('.').pop();
+                const baseName = file.name.replace(/\.(mp3|ogg|wav)$/i, '');
+                let creator = '';
+                let songName = baseName;
+
+                const parts = baseName.split(' - ');
+                if (parts.length >= 2) {
+                    creator = parts[0].trim();
+                    songName = parts.slice(1).join(' - ').trim();
+                }
+                
+                library.push({
+                    id: Math.random().toString(36).substr(2, 9),
+                    name: baseName,
+                    creator: creator,
+                    songName: songName,
+                    file: file, // Store the File object directly
+                    type: type,
+                    duration: '--:--'
+                });
+            }
+        }
+        
         library.sort((a,b) => a.name.localeCompare(b.name));
         
         activeQueue = [...library];
@@ -585,19 +1097,19 @@
         
         document.getElementById('track-count').innerText = `${library.length} tracks`;
         render();
+        switchView('library');
 
         // Post-scan processing
         for(let i=0; i<library.length; i++) {
             const track = library[i];
             document.getElementById('track-list').innerHTML = `<div style="padding:50px; text-align:center">Analyzing track ${i+1}/${library.length}...<br>${track.name}</div>`;
-            track.duration = await getDuration(track.handle);
+            track.duration = await getDuration(track.file);
         }
         render();
     }
 
-    function getDuration(handle) {
-        return new Promise(async (resolve) => {
-            const file = await handle.getFile();
+    function getDuration(file) {
+        return new Promise((resolve) => {
             const audio = new Audio();
             audio.src = URL.createObjectURL(file);
             audio.onloadedmetadata = () => {
@@ -610,6 +1122,11 @@
 
     // --- Rendering ---
     function switchView(viewName) {
+        // On mobile, hide sidebar after switching views
+        if (document.body.classList.contains('sidebar-visible')) {
+            toggleSidebar();
+        }
+
         currentView = viewName;
         
         // Navigation highlighting
@@ -653,7 +1170,15 @@
         if (sortMode === 'alphabetical') {
             source.sort((a, b) => a.name.localeCompare(b.name));
         } else if (sortMode === 'length') {
-            source.sort((a, b) => (fmtToSec(a.duration) || 0) - (fmtToSec(b.duration) || 0));
+            source.sort((a, b) => {
+                const durationA = fmtToSec(a.duration) || 0;
+                const durationB = fmtToSec(b.duration) || 0;
+
+                if (durationA === durationB) {
+                    return a.name.localeCompare(b.name); // Secondary sort by name
+                }
+                return durationA - durationB;
+            });
         } else if (sortMode === 'format') {
             source.sort((a, b) => a.type.localeCompare(b.type));
         }
@@ -728,13 +1253,18 @@
     }
 
     // --- Audio Logic ---
-    async function playById(id) {
+    function playById(id) { // No longer needs to be async
         const track = library.find(t => t.id === id);
         if(!track) return;
 
         currentTrackId = id;
-        const file = await track.handle.getFile();
-        audio.src = URL.createObjectURL(file);
+        
+        // Revoke previous object URL to free memory, if one exists
+        if (audio.src.startsWith('blob:')) {
+            URL.revokeObjectURL(audio.src);
+        }
+        
+        audio.src = URL.createObjectURL(track.file);
         audio.play();
 
         document.getElementById('np-title').innerText = track.songName;
@@ -784,7 +1314,19 @@
         playById(playQueue[prevIdx].id);
     }
 
-    audio.onended = next; // Auto play next
+    function toggleRepeat() {
+        isRepeat = !isRepeat;
+        document.getElementById('btn-repeat').classList.toggle('active', isRepeat);
+    }
+
+    audio.onended = () => {
+        if (isRepeat && currentTrackId) {
+            audio.currentTime = 0;
+            audio.play();
+        } else {
+            next();
+        }
+    };
 
     audio.ontimeupdate = () => {
         const pct = (audio.currentTime / audio.duration) * 100 || 0;
@@ -804,60 +1346,287 @@
     };
 
     // --- Playlists & Utils ---
+    function savePlaylists() {
+        // This function is only for the localStorage path.
+        try {
+            localStorage.setItem('fh-mp3-playlists', JSON.stringify(playlists));
+        } catch (e) {
+            console.error("Could not save playlists to localStorage.", e);
+            alert("Could not save playlists. Your browser's storage might be full or disabled.");
+        }
+    }
+
     async function refreshPlaylists() {
-        if (!playlistHandle) return;
         const container = document.getElementById('playlist-list');
         container.innerHTML = '';
-        playlists = {};
-        
-        for await (const entry of playlistHandle.values()) {
-            if (entry.name.endsWith('.json')) {
-                const name = entry.name.replace('.json', '');
-                const file = await entry.getFile();
-                try {
-                    playlists[name] = JSON.parse(await file.text());
-                } catch(e) { playlists[name] = []; }
-                
-                const div = document.createElement('div');
-                div.className = `nav-item ${currentView === name ? 'active' : ''}`;
-                div.innerHTML = `<span onclick="switchView('${name}')">${name}</span> <i class="trash-btn" onclick="deletePlaylist('${entry.name}')">Delete</i>`;
-                container.appendChild(div);
-            }
+        playlists = {}; // Clear in-memory playlists before repopulating
+
+        try {
+            const storedPlaylists = localStorage.getItem('fh-mp3-playlists');
+            playlists = storedPlaylists ? JSON.parse(storedPlaylists) : {};
+        } catch (e) {
+            console.error("Could not load playlists from localStorage.", e);
+            playlists = {};
         }
+        
+        console.log('Refreshing playlist UI with playlists:', Object.keys(playlists));
+        Object.keys(playlists).forEach(name => {
+            const div = document.createElement('div');
+            div.className = `nav-item ${currentView === name ? 'active' : ''}`;
+            const deleteTarget = name; // Always playlist name for localStorage
+            div.innerHTML = `<span onclick="switchView('${name}')">${name}</span> <i class="trash-btn" onclick="deletePlaylist('${deleteTarget}')">Delete</i>`;
+            container.appendChild(div);
+        });
+    }
+
+    // --- Playlist File Sync (FSA write-back) ---
+
+    // Returns a readwrite handle to the most recently used playlist folder,
+    // or null if none is saved / permission is denied.
+    async function getActivePlaylistFolderHandle() {
+        const all = await idbGetAll();
+        const pfFolders = all.filter(f => f.type === 'playlist');
+        if (!pfFolders.length) return null;
+        pfFolders.sort((a, b) => new Date(b.lastOpened) - new Date(a.lastOpened));
+        const entry = pfFolders[0];
+        try {
+            // Check quietly first — no prompt if already granted
+            let perm = await entry.handle.queryPermission({ mode: 'readwrite' });
+            if (perm !== 'granted') {
+                perm = await entry.handle.requestPermission({ mode: 'readwrite' });
+            }
+            return perm === 'granted' ? entry.handle : null;
+        } catch (e) {
+            console.warn('getActivePlaylistFolderHandle:', e);
+            return null;
+        }
+    }
+
+    // Writes PlaylistName.json (array format) to the active playlist folder.
+    // If no folder and isNew === true, falls back to a browser download.
+    async function syncPlaylistFile(name, isNew = false) {
+        const data = JSON.stringify(playlists[name] ?? [], null, 2);
+        const filename = `${name}.json`;
+        const folderHandle = await getActivePlaylistFolderHandle();
+
+        if (folderHandle) {
+            try {
+                const fileHandle = await folderHandle.getFileHandle(filename, { create: true });
+                const writable = await fileHandle.createWritable();
+                await writable.write(data);
+                await writable.close();
+                const statusEl = document.getElementById('path-playlists');
+                if (statusEl) statusEl.innerText = `✓ Saved "${filename}" to "${folderHandle.name}"`;
+            } catch (e) {
+                console.error('syncPlaylistFile write error:', e);
+            }
+        } else if (isNew) {
+            // No folder set — download the file on first create so the user has it
+            downloadPlaylistFile(name, data);
+        }
+    }
+
+    // Removes PlaylistName.json from the active playlist folder, if it exists.
+    async function deletePlaylistFile(name) {
+        const folderHandle = await getActivePlaylistFolderHandle();
+        if (!folderHandle) return;
+        try {
+            await folderHandle.removeEntry(`${name}.json`);
+            const statusEl = document.getElementById('path-playlists');
+            if (statusEl) statusEl.innerText = `🗑 Deleted "${name}.json" from "${folderHandle.name}"`;
+        } catch (e) {
+            // File may not exist yet (e.g. playlist was never synced) — that's fine
+            if (e.name !== 'NotFoundError') console.warn('deletePlaylistFile:', e);
+        }
+    }
+
+    // Triggers a browser download of the playlist as a .json file.
+    function downloadPlaylistFile(name, data) {
+        const blob = new Blob([data], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `${name}.json`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
     }
 
     async function createPlaylist() {
-        const name = document.getElementById('new-p-name').value;
-        if(name && playlistHandle) {
-            const h = await playlistHandle.getFileHandle(`${name}.json`, {create:true});
-            const w = await h.createWritable(); await w.write("[]"); await w.close();
-            closeModals(); refreshPlaylists();
-        } else if (!playlistHandle) {
-            alert("Please select a Playlist Folder in Settings first.");
+        const nameInput = document.getElementById('new-p-name');
+        const name = nameInput.value.trim();
+        if (!name) {
+            alert("Please enter a playlist name.");
+            return;
         }
+        if (playlists[name]) {
+            alert(`Playlist "${name}" already exists.`);
+            return;
+        }
+
+        playlists[name] = [];
+        savePlaylists();
+        await syncPlaylistFile(name, true); // true = isNew: fall back to download if no folder
+
+        nameInput.value = '';
+        closeModals();
+        refreshPlaylists();
     }
     
     async function addToPlaylist(name) {
-        const h = await playlistHandle.getFileHandle(`${name}.json`);
-        const file = await h.getFile();
-        let list = JSON.parse(await file.text());
+        const list = playlists[name];
+        if (!list) return;
+        let addedCount = 0;
         selectedIds.forEach(id => {
-            const t = library.find(x => x.id === id);
-            if(t && !list.includes(t.name)) list.push(t.name);
+            const t = library.find(t => t.id === id);
+            if (t && !list.includes(t.name)) {
+                list.push(t.name);
+                addedCount++;
+            }
         });
-        const w = await h.createWritable(); await w.write(JSON.stringify(list)); await w.close();
+        if (addedCount > 0) {
+            savePlaylists();
+            await syncPlaylistFile(name);
+        }
         closeModals();
     }
     
-    async function deletePlaylist(fname) {
-        if(confirm('Delete playlist?')) { await playlistHandle.removeEntry(fname); refreshPlaylists(); }
+    async function deletePlaylist(target) {
+        const name = target;
+        if (!confirm(`Delete playlist "${name}"?`)) return;
+
+        delete playlists[target];
+        savePlaylists();
+        await deletePlaylistFile(name);
+
+        if (currentView === name) {
+            switchView('library');
+        }
+        refreshPlaylists();
+    }
+
+    async function removeSelectedFromPlaylist() {
+        document.getElementById('ctx-menu').style.display = 'none';
+        const playlistName = currentView;
+        if (playlistName === 'library' || !playlists[playlistName]) return;
+
+        const selectedTrackNames = new Set();
+        selectedIds.forEach(id => {
+            const track = library.find(t => t.id === id);
+            if (track) selectedTrackNames.add(track.name);
+        });
+
+        if (selectedTrackNames.size === 0) return;
+
+        const updatedTracks = playlists[playlistName].filter(trackName => !selectedTrackNames.has(trackName));
+        playlists[playlistName] = updatedTracks;
+        savePlaylists();
+        await syncPlaylistFile(playlistName);
+
+        selectedIds.clear();
+        render();
+    }
+
+    async function mergePlaylists(playlistsToImport) {
+        try {
+            const importedCount = Object.keys(playlistsToImport).length;
+            if (importedCount === 0) return alert('No valid playlists found in the data.');
+
+            if (confirm(`This will import/overwrite ${importedCount} playlist(s). Continue?`)) {
+                Object.assign(playlists, playlistsToImport); // Merge into in-memory
+                savePlaylists(); // Persist change
+                alert(`${importedCount} playlist(s) imported successfully.`);
+                refreshPlaylists();
+            }
+        } catch(e) {
+            console.error("Merge playlist operation failed:", e);
+            alert("An error occurred during the import process. The data might be malformed.");
+        }
+    }
+
+    async function importPlaylists(file) {
+        // Handles file import, then passes data to the shared merge function.
+        if (!file) return;
+        if (!file.name.endsWith('.json')) return alert('Please select a valid .json file.');
+
+        try {
+            const content = await file.text();
+            const parsedData = JSON.parse(content);
+            let finalPlaylistsToImport = {};
+
+            if (Array.isArray(parsedData)) {
+                const playlistName = file.name.replace('.json', '');
+                finalPlaylistsToImport[playlistName] = parsedData;
+            } else if (typeof parsedData === 'object' && parsedData !== null) {
+                finalPlaylistsToImport = parsedData;
+            } else {
+                throw new Error('Invalid format: not a valid JSON array or object.');
+            }
+            
+            await mergePlaylists(finalPlaylistsToImport);
+
+        } catch (error) {
+            console.error('Failed to import playlists from file:', error);
+            alert('Failed to import playlists. Make sure the file is correctly formatted.');
+        } finally {
+            document.getElementById('playlist-import-input').value = '';
+        }
+    }
+
+    function openClipboardImportModal() {
+        openModal('clipboard-import-modal');
+    }
+
+    async function processClipboardImport() {
+        const text = document.getElementById('clipboard-input-area').value;
+        if (!text) return;
+
+        try {
+            const parsedData = JSON.parse(text);
+            let finalPlaylistsToImport = {};
+
+            if (Array.isArray(parsedData)) {
+                // It's a single playlist array, so we need to ask for a name.
+                const playlistName = prompt("You've pasted a single playlist. Please enter a name for it:");
+                if (playlistName) {
+                    finalPlaylistsToImport[playlistName] = parsedData;
+                } else {
+                    return; // User cancelled or entered no name.
+                }
+            } else if (typeof parsedData === 'object' && parsedData !== null) {
+                // It's an object of playlists, use it directly.
+                finalPlaylistsToImport = parsedData;
+            } else {
+                throw new Error('Invalid format: not a valid JSON array or object.');
+            }
+            
+            await mergePlaylists(finalPlaylistsToImport);
+            closeModals();
+            document.getElementById('clipboard-input-area').value = ''; // Clear textarea
+
+        } catch (error) {
+            console.error('Failed to import from clipboard:', error);
+            alert('Failed to import. Make sure the data is correctly formatted JSON.');
+        }
     }
 
     function handleGlobalClick(e) {
-        if (e.target.closest('.track-row') || e.target.closest('#ctx-menu') || e.target.closest('.modal') || e.target.closest('.view-options')) return;
+        if (e.target.closest('.track-row') || e.target.closest('#ctx-menu') || e.target.closest('.modal') || e.target.closest('.view-options') || e.target.closest('.hamburger-btn')) return;
+        
+        // If sidebar is visible on mobile, a global click should hide it
+        if (document.body.classList.contains('sidebar-visible')) {
+            // This is handled by the sidebar-overlay click, but as a fallback:
+            toggleSidebar();
+        }
+
         if (selectedIds.size > 0) { selectedIds.clear(); render(); }
         document.getElementById('ctx-menu').style.display = 'none';
         document.getElementById('view-menu').style.display = 'none';
+    }
+
+    function toggleSidebar() {
+        document.body.classList.toggle('sidebar-visible');
     }
 
     function toggleSortMenu() {
@@ -882,7 +1651,21 @@
     
     function showCtx(e) {
         const m = document.getElementById('ctx-menu');
-        m.style.display = 'block'; m.style.left = e.pageX + 'px'; m.style.top = e.pageY + 'px';
+        const removeItem = document.getElementById('ctx-remove-item');
+        const divider = document.getElementById('ctx-playlist-divider');
+
+        // Check if the current view is a playlist
+        if (currentView !== 'library' && currentView !== 'settings' && currentView !== 'guide' && currentView !== 'fetch' && playlists[currentView]) {
+            removeItem.style.display = 'block';
+            divider.style.display = 'block';
+        } else {
+            removeItem.style.display = 'none';
+            divider.style.display = 'none';
+        }
+
+        m.style.display = 'block';
+        m.style.left = e.pageX + 'px';
+        m.style.top = e.pageY + 'px';
     }
     
     function playSelected() {
@@ -893,25 +1676,90 @@
     }
 
     function openAddToModal() {
-        if(!playlistHandle) { alert("Please set a Playlist Folder in Settings first."); return; }
-        const list = document.getElementById('target-list'); list.innerHTML = '';
-        Object.keys(playlists).forEach(name => {
-            const d = document.createElement('div'); d.className='nav-item'; d.innerText=name;
-            d.onclick=()=>addToPlaylist(name); list.appendChild(d);
-        });
+        const list = document.getElementById('target-list');
+        list.innerHTML = '';
+        if (Object.keys(playlists).length === 0) {
+            list.innerHTML = '<div style="padding: 10px; color: var(--text-dim);">No playlists exist. Create one first!</div>';
+        } else {
+            Object.keys(playlists).forEach(name => {
+                const d = document.createElement('div');
+                d.className='nav-item';
+                d.innerText=name;
+                d.onclick=()=>addToPlaylist(name);
+                list.appendChild(d);
+            });
+        }
         openModal('add-to-modal');
     }
 
-    function openModal(id) { document.getElementById(id).style.display='flex'; }
+    function openModal(id) {
+        document.getElementById(id).style.display = 'flex';
+        if (id === 'new-p-modal') populateNewPlaylistHint();
+    }
+
+    async function populateNewPlaylistHint() {
+        const hint = document.getElementById('new-p-hint');
+        if (!hint) return;
+        const all = await idbGetAll();
+        const pfFolders = all.filter(f => f.type === 'playlist');
+        if (pfFolders.length > 0) {
+            pfFolders.sort((a, b) => new Date(b.lastOpened) - new Date(a.lastOpened));
+            const folderName = pfFolders[0].name;
+            hint.innerHTML = `📁 Will be saved as <code style="background:rgba(255,255,255,0.08); padding:1px 5px; border-radius:4px; font-size:11px;">&lt;name&gt;.json</code> in <strong style="color:var(--text-main);">${folderName}</strong>`;
+        } else {
+            hint.innerHTML = `⬇️ No playlist folder set — the file will be <strong style="color:var(--text-main);">downloaded</strong> to your browser's downloads folder. You can set a folder in <span style="color:var(--accent); cursor:pointer;" onclick="closeModals(); switchView('settings')">Settings</span>.`;
+        }
+    }
     function closeModals() { document.querySelectorAll('.modal-overlay').forEach(m=>m.style.display='none'); }
+
+    function showPlaylistData() {
+        const rawData = localStorage.getItem('fh-mp3-playlists');
+        const formattedData = JSON.stringify(JSON.parse(rawData || '{}'), null, 2);
+        document.getElementById('raw-data-content').textContent = formattedData;
+        openModal('raw-data-modal');
+    }
+
+    function copyPlaylistData() {
+        const data = document.getElementById('raw-data-content').textContent;
+        navigator.clipboard.writeText(data).then(() => {
+            alert('Playlist data copied to clipboard!');
+        }, () => {
+            alert('Failed to copy. Please copy the text manually.');
+        });
+    }
+
     function fmt(s) { const m=Math.floor(s/60), ss=Math.floor(s%60); return isNaN(s)?'0:00':`${m}:${ss<10?'0':''}${ss}`; }
     function fmtToSec(t) { if (!t || t === '--:--') return 0; const p = t.split(':').map(Number); return p[0] * 60 + p[1]; }
     
-    // IDB
-    function idb() { return new Promise(r => { const q = indexedDB.open('MusicProV5', 1); q.onupgradeneeded=()=>q.result.createObjectStore('s'); q.onsuccess=()=>r(q.result); }); }
-    async function setDB(k,v) { const db = await idb(); db.transaction('s','readwrite').objectStore('s').put(v,k); }
-    async function getDB(k) { const db = await idb(); return new Promise(r => { const q = db.transaction('s').objectStore('s').get(k); q.onsuccess=()=>r(q.result); }); }
+    async function loadConfig() {
+        let volValue = document.getElementById('vol').value; // Get default from HTML
+        try {
+            const response = await fetch('config.json');
+            if (response.ok) {
+                const config = await response.json();
+                if (config.default_volume !== undefined) {
+                    volValue = Math.max(0, Math.min(1, config.default_volume));
+                }
+            } else {
+                console.log('config.json not found, using default settings.');
+            }
+        } catch (error) {
+            // This error often happens when opening the page as a local file (file://)
+            // due to browser security. Running a local server is recommended.
+            console.error('Error loading or parsing config.json:', error);
+        } finally {
+            // Always apply the volume, either from config or default HTML value
+            const volSlider = document.getElementById('vol');
+            audio.volume = volValue;
+            volSlider.value = volValue;
+            volSlider.style.setProperty('--value-percent', `${volValue * 100}%`);
+        }
+    }
+
+
 
 </script>
+
 </body>
+
 </html>
