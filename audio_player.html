@@ -8,20 +8,83 @@
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
 
         :root {
-            --accent: #d946ef; /* Magenta/Purple */
+            --accent: #d946ef;
             --accent-glow: rgba(217, 70, 239, 0.4);
             --bg-main: #09090b;
+            --bg-gradient: linear-gradient(to bottom right, #1a103c, #000000);
             --glass-panel: rgba(24, 24, 27, 0.6);
             --glass-border: rgba(255, 255, 255, 0.08);
             --text-main: #fafafa;
             --text-dim: #a1a1aa;
         }
 
+        /* ── Themes ── */
+        /* Presets ordered by hue: red → orange → yellow → green → teal → sky → indigo → lavender → magenta */
+        body.theme-rose     { --accent:#fb7185; --accent-glow:rgba(251,113,133,0.4); --bg-gradient:linear-gradient(to bottom right,#2d0a14,#0a0005); }
+        body.theme-ember    { --accent:#f97316; --accent-glow:rgba(249,115,22,0.4);  --bg-gradient:linear-gradient(to bottom right,#2c1000,#0a0000); }
+        body.theme-gold     { --accent:#fbbf24; --accent-glow:rgba(251,191,36,0.4);  --bg-gradient:linear-gradient(to bottom right,#1c1200,#080600); }
+        body.theme-lime     { --accent:#a3e635; --accent-glow:rgba(163,230,53,0.4);  --bg-gradient:linear-gradient(to bottom right,#0d1f00,#040800); }
+        body.theme-forest   { --accent:#4ade80; --accent-glow:rgba(74,222,128,0.4);  --bg-gradient:linear-gradient(to bottom right,#052010,#000a05); }
+        body.theme-teal     { --accent:#2dd4bf; --accent-glow:rgba(45,212,191,0.4);  --bg-gradient:linear-gradient(to bottom right,#001f1c,#000a08); }
+        body.theme-ocean    { --accent:#38bdf8; --accent-glow:rgba(56,189,248,0.4);  --bg-gradient:linear-gradient(to bottom right,#0c2340,#000d1a); }
+        body.theme-indigo   { --accent:#818cf8; --accent-glow:rgba(129,140,248,0.4); --bg-gradient:linear-gradient(to bottom right,#0d0f30,#050610); }
+        body.theme-lavender { --accent:#c084fc; --accent-glow:rgba(192,132,252,0.4); --bg-gradient:linear-gradient(to bottom right,#1a0930,#080010); }
+        /* default (magenta) = no class, values from :root */
+
+        /* ── Theme swatch picker ── */
+        .theme-swatches { display: flex; gap: 12px; flex-wrap: wrap; margin-top: 5px; }
+        .theme-swatch {
+            width: 36px; height: 36px; border-radius: 50%; cursor: pointer;
+            border: 3px solid transparent; transition: transform 0.15s, border-color 0.15s;
+            position: relative;
+        }
+        .theme-swatch:hover { transform: scale(1.15); }
+        .theme-swatch.active { border-color: white; }
+        .theme-swatch[data-theme="default"]  { background: #d946ef; }
+        .theme-swatch[data-theme="rose"]     { background: #fb7185; }
+        .theme-swatch[data-theme="ember"]    { background: #f97316; }
+        .theme-swatch[data-theme="gold"]     { background: #fbbf24; }
+        .theme-swatch[data-theme="lime"]     { background: #a3e635; }
+        .theme-swatch[data-theme="forest"]   { background: #4ade80; }
+        .theme-swatch[data-theme="teal"]     { background: #2dd4bf; }
+        .theme-swatch[data-theme="ocean"]    { background: #38bdf8; }
+        .theme-swatch[data-theme="indigo"]   { background: #818cf8; }
+        .theme-swatch[data-theme="lavender"] { background: #c084fc; }
+
+        /* ── Text color pickers ── */
+        .color-row {
+            display: flex; align-items: center; justify-content: space-between;
+            padding: 10px 0;
+            border-bottom: 1px solid var(--glass-border);
+        }
+        .color-row:last-child { border-bottom: none; }
+        .color-row-label { font-size: 13px; color: var(--text-main); }
+        .color-row-label span { display: block; font-size: 11px; color: var(--text-dim); margin-top: 2px; }
+        .color-row-right { display: flex; align-items: center; gap: 10px; }
+        .color-hex {
+            font-family: monospace; font-size: 12px; color: var(--text-dim);
+            background: rgba(0,0,0,0.3); padding: 4px 8px; border-radius: 6px;
+            width: 72px; text-align: center;
+        }
+        input[type=color] {
+            width: 36px; height: 36px; border-radius: 50%; border: 3px solid rgba(255,255,255,0.15);
+            padding: 0; cursor: pointer; background: none;
+            -webkit-appearance: none;
+        }
+        input[type=color]::-webkit-color-swatch-wrapper { padding: 0; border-radius: 50%; }
+        input[type=color]::-webkit-color-swatch { border: none; border-radius: 50%; }
+        .reset-text-btn {
+            background: none; border: 1px solid var(--glass-border); color: var(--text-dim);
+            font-size: 11px; padding: 5px 10px; border-radius: 6px; cursor: pointer;
+            transition: 0.15s; white-space: nowrap;
+        }
+        .reset-text-btn:hover { border-color: var(--accent); color: var(--accent); }
+
         * { box-sizing: border-box; outline: none; user-select: none; -webkit-user-select: none; }
         
         body {
             font-family: 'Inter', sans-serif;
-            background: linear-gradient(to bottom right, #1a103c, #000000);
+            background: var(--bg-gradient);
             color: var(--text-main);
             margin: 0;
             display: flex;
@@ -112,6 +175,14 @@
             display: flex; align-items: center; gap: 10px; width: 100%; justify-content: center;
         }
         .settings-btn:hover { background: var(--accent); border-color: var(--accent); }
+        .settings-btn-sm {
+            background: rgba(255,255,255,0.06); border: 1px solid var(--glass-border);
+            color: var(--text-dim); padding: 10px 14px; border-radius: 8px; cursor: pointer;
+            font-size: 12px; font-weight: 500; transition: 0.2s;
+            display: flex; align-items: center; gap: 8px; white-space: nowrap;
+        }
+        .settings-btn-sm:hover { background: rgba(255,255,255,0.1); color: white; border-color: rgba(255,255,255,0.2); }
+        .settings-btn-row { display: flex; align-items: center; gap: 10px; }
         .path-display { 
             font-family: monospace; color: var(--text-dim); font-size: 12px; 
             margin-top: 10px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; 
@@ -372,6 +443,7 @@
                 <button class="view-btn" onclick="toggleSortMenu()">☰</button>
                             <div class="view-menu" id="view-menu">
                                 <div class="view-item active" data-mode="alphabetical" onclick="setSortMode('alphabetical')">Alphabetical</div>
+                                <div class="view-item" data-mode="artist" onclick="setSortMode('artist')">Artist</div>
                                 <div class="view-item" data-mode="length" onclick="setSortMode('length')">Length</div>
                                 <div class="view-item" data-mode="format" onclick="setSortMode('format')">File Format</div>
                                 <div class="ctx-divider"></div>
@@ -394,74 +466,143 @@
 
         <div id="view-settings" class="page-view">
             <h2 style="margin-bottom: 20px;">Settings</h2>
-            
+
+            <!-- ── 1. Config ── -->
             <div class="settings-card">
-                <h3>Music Source</h3>
-
-                <div id="fsa-section">
-                    <p style="font-size:13px; color:var(--text-dim); margin-bottom:12px">Open a folder — the app will remember it for next time.</p>
-                    <button class="settings-btn" onclick="openFolderPicker()">
-                        📂 Open Music Folder
-                    </button>
-                    <div class="path-display" id="path-music" style="margin-top:10px">No folder selected</div>
-                </div>
-
-                <div id="fsa-not-supported-banner" class="fsa-not-supported" style="background:rgba(239,68,68,0.08); border:1px solid rgba(239,68,68,0.2); border-radius:10px; padding:10px 14px; font-size:12px; color:#f87171; margin-bottom:14px;">
-                    Your browser does not support the Folder Picker API. Please use the manual file select below.
-                </div>
-
-                <div style="margin-top:20px; padding-top:16px; border-top: 1px solid var(--glass-border);">
-                    <p style="font-size:12px; color:var(--text-dim); margin-bottom:10px; font-weight:600; text-transform:uppercase; letter-spacing:1px;">Fallback — Firefox / manual file select</p>
-                    <p style="font-size:13px; color:var(--text-dim); margin-bottom:10px;">Select individual audio files (.mp3, .ogg, .wav). Folder history is not saved with this method.</p>
-                    <label class="settings-btn" style="background:rgba(255,255,255,0.05);">
-                        Select Files
-                        <input type="file" id="music-input" multiple webkitdirectory style="display: none;">
+                <h3>Configuration File</h3>
+                <p style="font-size:13px; color:var(--text-dim); margin-bottom:6px">
+                    <code style="font-size:11px; background:rgba(255,255,255,0.07); padding:2px 5px; border-radius:4px;">config.json</code>
+                    stores your startup preferences — volume, theme, colors, and folder names. Place it next to the player HTML file.
+                </p>
+                <p style="font-size:12px; color:var(--text-dim); margin-bottom:14px">
+                    Preferences in <code style="font-size:11px; background:rgba(255,255,255,0.07); padding:2px 5px; border-radius:4px;">config.json</code> apply at startup. In-session changes take priority. Click Export to bake your current state into a new file.
+                </p>
+                <div class="settings-btn-row" style="margin-bottom:10px;">
+                    <button class="settings-btn" onclick="exportConfig()">⬇ Export config.json</button>
+                    <label class="settings-btn" style="background:rgba(255,255,255,0.05); cursor:pointer;">
+                        ⬆ Load config.json
+                        <input type="file" id="config-import-input" accept=".json" style="display:none;">
                     </label>
                 </div>
+                <div class="path-display" id="config-export-status" style="display:none;"></div>
             </div>
 
-            <div class="settings-card" id="recent-folders-card">
-                <h3>Recent Folders</h3>
-                <p style="font-size:13px; color:var(--text-dim); margin-bottom:14px">Click a folder to reload it. Your browser will ask for permission once.</p>
-                <div id="recent-folders-list">
-                    <div style="font-size:13px; color:var(--text-dim); padding: 8px 0;">No folders saved yet.</div>
+            <!-- ── 2. Music ── -->
+            <div class="settings-card">
+                <h3>Music</h3>
+                <p style="font-size:13px; color:var(--text-dim); margin-bottom:12px">Open a folder — the app will remember it for next time.</p>
+
+                <div id="fsa-not-supported-banner" class="fsa-not-supported" style="background:rgba(239,68,68,0.08); border:1px solid rgba(239,68,68,0.2); border-radius:10px; padding:10px 14px; font-size:12px; color:#f87171; margin-bottom:12px;">
+                    Your browser does not support the Folder Picker API. Use the file select button instead.
+                </div>
+
+                <div class="settings-btn-row" style="margin-bottom:10px;">
+                    <button class="settings-btn" onclick="openFolderPicker()">📂 Open Music Folder</button>
+                    <label class="settings-btn-sm" title="Select individual audio files (.mp3, .ogg, .wav). Folder history is not saved.">
+                        📄 Select Files
+                        <input type="file" id="music-input" multiple webkitdirectory style="display:none;">
+                    </label>
+                </div>
+                <div class="path-display" id="path-music">No folder selected</div>
+
+                <div style="margin-top:16px; padding-top:14px; border-top:1px solid var(--glass-border);">
+                    <p style="font-size:11px; color:var(--text-dim); font-weight:600; text-transform:uppercase; letter-spacing:1px; margin-bottom:10px;">Recent Music Folders</p>
+                    <div id="recent-folders-list">
+                        <div style="font-size:13px; color:var(--text-dim); padding:4px 0;">No folders saved yet.</div>
+                    </div>
                 </div>
             </div>
 
-            <div class="settings-card" id="playlist-card-local">
-                <h3>Playlist Storage</h3>
-                <p style="font-size:13px; color:var(--text-dim); margin-bottom:15px">On this device, playlists are saved to the browser's local storage.</p>
-            </div>
-
+            <!-- ── 3. Playlists ── -->
             <div class="settings-card" id="playlist-card-import-export">
-                <h3>Playlist Folder</h3>
+                <h3>Playlists</h3>
                 <p style="font-size:13px; color:var(--text-dim); margin-bottom:12px">Open a folder of <code style="font-size:11px; background:rgba(255,255,255,0.07); padding:2px 5px; border-radius:4px;">.json</code> playlist files — all will be imported and the folder remembered for next time.</p>
-                <button class="settings-btn" onclick="openPlaylistFolderPicker()" style="margin-bottom:10px;">
-                    🗂 Open Playlist Folder
-                </button>
+
+                <button class="settings-btn" onclick="openPlaylistFolderPicker()" style="margin-bottom:8px;">🗂 Open Playlist Folder</button>
+                <label class="settings-btn" style="background:rgba(255,255,255,0.05); margin-bottom:10px; cursor:pointer;">
+                    📄 Import Playlist Files (.json)
+                    <input type="file" id="playlist-import-input" accept=".json" multiple style="display:none;">
+                </label>
                 <div class="path-display" id="path-playlists">No playlist folder selected</div>
 
-                <div style="margin-top:20px; padding-top:16px; border-top:1px solid var(--glass-border);">
-                    <p style="font-size:12px; color:var(--text-dim); margin-bottom:10px; font-weight:600; text-transform:uppercase; letter-spacing:1px;">Fallback — select individual files</p>
-                    <label class="settings-btn" style="background:rgba(255,255,255,0.05); margin-bottom:10px;">
-                        Import Playlist Files (.json)
-                        <input type="file" id="playlist-import-input" accept=".json" multiple style="display: none;">
-                    </label>
+                <div style="margin-top:16px; padding-top:14px; border-top:1px solid var(--glass-border);">
+                    <p style="font-size:11px; color:var(--text-dim); font-weight:600; text-transform:uppercase; letter-spacing:1px; margin-bottom:10px;">Recent Playlist Folders</p>
+                    <div id="recent-playlist-folders-list">
+                        <div style="font-size:13px; color:var(--text-dim); padding:4px 0;">No playlist folders saved yet.</div>
+                    </div>
                 </div>
 
-                <div style="margin-top:20px; padding-top:16px; border-top:1px solid var(--glass-border);">
-                    <p style="font-size:12px; color:var(--text-dim); margin-bottom:10px; font-weight:600; text-transform:uppercase; letter-spacing:1px;">Manual backup</p>
-                    <button class="settings-btn" onclick="showPlaylistData()" style="background: rgba(255,255,255,0.05); margin-bottom: 10px;">View & Copy Playlist Data</button>
-                    <button class="settings-btn" onclick="openClipboardImportModal()" style="background: rgba(255,255,255,0.05);">Import from Clipboard</button>
+                <div style="margin-top:16px; padding-top:14px; border-top:1px solid var(--glass-border);">
+                    <p style="font-size:11px; color:var(--text-dim); font-weight:600; text-transform:uppercase; letter-spacing:1px; margin-bottom:10px;">Manual Backup</p>
+                    <div class="settings-btn-row">
+                        <button class="settings-btn-sm" onclick="showPlaylistData()">📋 View &amp; Copy Data</button>
+                        <button class="settings-btn-sm" onclick="openClipboardImportModal()">📥 Import from Clipboard</button>
+                    </div>
                 </div>
             </div>
 
-            <div class="settings-card" id="recent-playlist-folders-card">
-                <h3>Recent Playlist Folders</h3>
-                <p style="font-size:13px; color:var(--text-dim); margin-bottom:14px">Click a folder to re-import all playlists inside it.</p>
-                <div id="recent-playlist-folders-list">
-                    <div style="font-size:13px; color:var(--text-dim); padding:8px 0;">No playlist folders saved yet.</div>
+            <div class="settings-card">
+                <h3>Theme</h3>
+
+                <p style="font-size:12px; color:var(--text-dim); margin-bottom:10px; font-weight:600; text-transform:uppercase; letter-spacing:1px;">Accent preset</p>
+                <div class="theme-swatches" style="margin-bottom:16px;">
+                    <div class="theme-swatch active" data-theme="default"  title="Magenta (Default)" onclick="setTheme('default')"></div>
+                    <div class="theme-swatch"        data-theme="rose"     title="Rose"     onclick="setTheme('rose')"></div>
+                    <div class="theme-swatch"        data-theme="ember"    title="Ember"    onclick="setTheme('ember')"></div>
+                    <div class="theme-swatch"        data-theme="gold"     title="Gold"     onclick="setTheme('gold')"></div>
+                    <div class="theme-swatch"        data-theme="lime"     title="Lime"     onclick="setTheme('lime')"></div>
+                    <div class="theme-swatch"        data-theme="forest"   title="Forest"   onclick="setTheme('forest')"></div>
+                    <div class="theme-swatch"        data-theme="teal"     title="Teal"     onclick="setTheme('teal')"></div>
+                    <div class="theme-swatch"        data-theme="ocean"    title="Ocean"    onclick="setTheme('ocean')"></div>
+                    <div class="theme-swatch"        data-theme="indigo"   title="Indigo"   onclick="setTheme('indigo')"></div>
+                    <div class="theme-swatch"        data-theme="lavender" title="Lavender" onclick="setTheme('lavender')"></div>
                 </div>
+
+                <p style="font-size:12px; color:var(--text-dim); margin-bottom:10px; font-weight:600; text-transform:uppercase; letter-spacing:1px;">Colors</p>
+                <div style="background:rgba(0,0,0,0.2); border-radius:10px; padding:4px 12px;">
+                    <div class="color-row">
+                        <div class="color-row-label">
+                            Accent
+                            <span>Highlights, active states</span>
+                        </div>
+                        <div class="color-row-right">
+                            <span class="color-hex" id="hex-accent">#d946ef</span>
+                            <input type="color" id="pick-accent" value="#d946ef"
+                                oninput="setAccentColor(this.value)">
+                        </div>
+                    </div>
+                    <div class="color-row">
+                        <div class="color-row-label">
+                            Main text
+                            <span>Track names, headings</span>
+                        </div>
+                        <div class="color-row-right">
+                            <span class="color-hex" id="hex-text-main">#fafafa</span>
+                            <input type="color" id="pick-text-main" value="#fafafa"
+                                oninput="setTextColor('main', this.value)">
+                        </div>
+                    </div>
+                    <div class="color-row">
+                        <div class="color-row-label">
+                            Dim text
+                            <span>Artist names, timestamps</span>
+                        </div>
+                        <div class="color-row-right">
+                            <span class="color-hex" id="hex-text-dim">#a1a1aa</span>
+                            <input type="color" id="pick-text-dim" value="#a1a1aa"
+                                oninput="setTextColor('dim', this.value)">
+                        </div>
+                    </div>
+                </div>
+                <button class="reset-text-btn" style="margin-top:12px;" onclick="resetAllColors()">↺ Reset all colors to default</button>
+            </div>
+
+            <div class="settings-card" style="border-color: rgba(239,68,68,0.2);">
+                <h3 style="color:#f87171;">Danger Zone</h3>
+                <p style="font-size:13px; color:var(--text-dim); margin-bottom:14px;">Clears all playlists, folder history, and saved preferences from this browser. Your actual music files are not affected. The page will reload.</p>
+                <button class="settings-btn" onclick="clearCache()" style="background:rgba(239,68,68,0.12); border-color:rgba(239,68,68,0.3); color:#f87171;">
+                    🗑 Clear All Saved Data
+                </button>
             </div>
 
             <div class="settings-card">
@@ -688,8 +829,9 @@
     
             // --- Init ---
             window.onload = async () => {
+                loadTheme();
+                await initDB();       // must come first — loadConfig uses idbGetAll
                 await loadConfig();
-                await initDB();
 
                 // Show fallback banner if File System Access API is not available
                 if (!('showDirectoryPicker' in window)) {
@@ -700,6 +842,7 @@
                 await renderPlaylistFolderList();
 
                 document.getElementById('music-input').onchange = (e) => scanMusic(e.target.files);
+                document.getElementById('config-import-input').onchange = (e) => loadConfigFile(e.target.files[0]);
 
                 // Multi-file playlist fallback input
                 document.getElementById('playlist-import-input').onchange = async (e) => {
@@ -1166,21 +1309,26 @@
         let source = currentView === 'library' ? library : 
             (playlists[currentView] || []).map(n => library.find(t => t.name === n)).filter(Boolean);
 
+        // Locale-aware collator (handles Korean, Latin, etc. correctly)
+        const collator = new Intl.Collator(undefined, { sensitivity: 'base', numeric: true });
+
         // Sort the source based on sortMode
         if (sortMode === 'alphabetical') {
-            source.sort((a, b) => a.name.localeCompare(b.name));
+            source.sort((a, b) => collator.compare(a.name, b.name));
+        } else if (sortMode === 'artist') {
+            source.sort((a, b) => {
+                const cmp = collator.compare(a.creator, b.creator);
+                return cmp !== 0 ? cmp : collator.compare(a.name, b.name);
+            });
         } else if (sortMode === 'length') {
             source.sort((a, b) => {
                 const durationA = fmtToSec(a.duration) || 0;
                 const durationB = fmtToSec(b.duration) || 0;
-
-                if (durationA === durationB) {
-                    return a.name.localeCompare(b.name); // Secondary sort by name
-                }
+                if (durationA === durationB) return collator.compare(a.name, b.name);
                 return durationA - durationB;
             });
         } else if (sortMode === 'format') {
-            source.sort((a, b) => a.type.localeCompare(b.type));
+            source.sort((a, b) => collator.compare(a.type, b.type));
         }
 
         if (sortOrder === 'desc') {
@@ -1369,7 +1517,7 @@
             playlists = {};
         }
         
-        console.log('Refreshing playlist UI with playlists:', Object.keys(playlists));
+        
         Object.keys(playlists).forEach(name => {
             const div = document.createElement('div');
             div.className = `nav-item ${currentView === name ? 'active' : ''}`;
@@ -1728,32 +1876,307 @@
         });
     }
 
+    // --- Theme ---
+    const THEME_ACCENTS = {
+        default: '#d946ef', rose: '#fb7185', ember: '#f97316', gold: '#fbbf24',
+        lime: '#a3e635', forest: '#4ade80', teal: '#2dd4bf', ocean: '#38bdf8',
+        indigo: '#818cf8', lavender: '#c084fc'
+    };
+    const COLOR_DEFAULTS = { accent: '#d946ef', main: '#fafafa', dim: '#a1a1aa' };
+
+    function hexToRgba(hex, alpha) {
+        const r = parseInt(hex.slice(1,3),16), g = parseInt(hex.slice(3,5),16), b = parseInt(hex.slice(5,7),16);
+        return `rgba(${r},${g},${b},${alpha})`;
+    }
+
+    function setTheme(name) {
+        const allThemes = Object.keys(THEME_ACCENTS).filter(t => t !== 'default');
+        allThemes.forEach(t => document.body.classList.remove('theme-' + t));
+        if (name !== 'default') document.body.classList.add('theme-' + name);
+
+        // Clear any custom accent override so the class value takes effect
+        document.documentElement.style.removeProperty('--accent');
+        document.documentElement.style.removeProperty('--accent-glow');
+
+        // Sync accent picker + hex to the preset color
+        const accentHex = THEME_ACCENTS[name] || COLOR_DEFAULTS.accent;
+        const pickEl = document.getElementById('pick-accent');
+        const hexEl  = document.getElementById('hex-accent');
+        if (pickEl) pickEl.value = accentHex;
+        if (hexEl)  hexEl.textContent = accentHex;
+
+        document.querySelectorAll('.theme-swatch').forEach(s => {
+            s.classList.toggle('active', s.dataset.theme === name);
+        });
+
+        localStorage.setItem('fh-mp3-theme', name);
+        localStorage.removeItem('fh-mp3-accent-custom');
+    }
+
+    function setAccentColor(value) {
+        // Strip any preset theme class so the inline --bg-gradient takes full effect
+        const allThemes = Object.keys(THEME_ACCENTS).filter(t => t !== 'default');
+        allThemes.forEach(t => document.body.classList.remove('theme-' + t));
+
+        // Compute a very dark tinted gradient from the custom color (matches preset style)
+        const r = parseInt(value.slice(1,3), 16);
+        const g = parseInt(value.slice(3,5), 16);
+        const b = parseInt(value.slice(5,7), 16);
+        const dark1 = `rgb(${Math.round(r*0.15)},${Math.round(g*0.12)},${Math.round(b*0.18)})`;
+        const dark2 = `rgb(${Math.round(r*0.04)},${Math.round(g*0.03)},${Math.round(b*0.05)})`;
+        document.documentElement.style.setProperty('--bg-gradient', `linear-gradient(to bottom right, ${dark1}, ${dark2})`);
+
+        document.documentElement.style.setProperty('--accent', value);
+        document.documentElement.style.setProperty('--accent-glow', hexToRgba(value, 0.4));
+        const hexEl = document.getElementById('hex-accent');
+        if (hexEl) hexEl.textContent = value;
+        document.querySelectorAll('.theme-swatch').forEach(s => s.classList.remove('active'));
+        localStorage.setItem('fh-mp3-accent-custom', value);
+    }
+
+    function setTextColor(which, value) {
+        const prop = which === 'main' ? '--text-main' : '--text-dim';
+        const hexEl = document.getElementById('hex-text-' + which);
+        document.documentElement.style.setProperty(prop, value);
+        if (hexEl) hexEl.textContent = value;
+        localStorage.setItem('fh-mp3-text-' + which, value);
+    }
+
+    function resetAllColors() {
+        // Reset accent — go back to default theme
+        setTheme('default');
+        // Reset text colors
+        ['main','dim'].forEach(which => {
+            const def = COLOR_DEFAULTS[which];
+            document.documentElement.style.removeProperty(which === 'main' ? '--text-main' : '--text-dim');
+            const picker = document.getElementById('pick-text-' + which);
+            const hexEl  = document.getElementById('hex-text-' + which);
+            if (picker) picker.value = def;
+            if (hexEl)  hexEl.textContent = def;
+            localStorage.removeItem('fh-mp3-text-' + which);
+        });
+    }
+
+    function loadTheme() {
+        const savedTheme   = localStorage.getItem('fh-mp3-theme');
+        const customAccent = localStorage.getItem('fh-mp3-accent-custom');
+
+        if (savedTheme) setTheme(savedTheme);
+
+        // Custom accent overrides preset — setAccentColor handles gradient + class removal
+        if (customAccent) {
+            setAccentColor(customAccent);
+            const picker = document.getElementById('pick-accent');
+            if (picker) picker.value = customAccent;
+        }
+
+        ['main','dim'].forEach(which => {
+            const saved = localStorage.getItem('fh-mp3-text-' + which);
+            if (saved) {
+                setTextColor(which, saved);
+                const picker = document.getElementById('pick-text-' + which);
+                if (picker) picker.value = saved;
+            }
+        });
+    }
+
+    // --- Clear Cache ---
+    async function clearCache() {
+        if (!confirm('This will delete all playlists, folder history, and saved preferences.\n\nYour music files are NOT affected.\n\nContinue?')) return;
+
+        // Clear all localStorage keys used by this app
+        const lsKeys = [
+            'fh-mp3-playlists',
+            'fh-mp3-theme',
+            'fh-mp3-accent-custom',
+            'fh-mp3-text-main',
+            'fh-mp3-text-dim',
+        ];
+        lsKeys.forEach(k => localStorage.removeItem(k));
+
+        // Wipe the entire IndexedDB (folder handles)
+        await new Promise((resolve, reject) => {
+            if (idb) idb.close();
+            const req = indexedDB.deleteDatabase(IDB_NAME);
+            req.onsuccess = resolve;
+            req.onerror   = reject;
+            req.onblocked = resolve; // proceed even if blocked
+        });
+
+        location.reload();
+    }
+
     function fmt(s) { const m=Math.floor(s/60), ss=Math.floor(s%60); return isNaN(s)?'0:00':`${m}:${ss<10?'0':''}${ss}`; }
     function fmtToSec(t) { if (!t || t === '--:--') return 0; const p = t.split(':').map(Number); return p[0] * 60 + p[1]; }
     
+    // --- Config ---
+    // Priority: localStorage (already applied by loadTheme) > config.json > hardcoded defaults
     async function loadConfig() {
-        let volValue = document.getElementById('vol').value; // Get default from HTML
+        let cfg = {};
+
         try {
             const response = await fetch('config.json');
             if (response.ok) {
-                const config = await response.json();
-                if (config.default_volume !== undefined) {
-                    volValue = Math.max(0, Math.min(1, config.default_volume));
+                cfg = await response.json();
+                console.debug('config.json loaded:', cfg);
+            } else {
+                console.debug('config.json not found — using localStorage / defaults.');
+            }
+        } catch (e) {
+            // Normal when opened as a local file (file://) — a local server is recommended.
+            console.debug('config.json could not be fetched:', e.message);
+        }
+
+        // --- Volume ---
+        // localStorage doesn't store volume, so config.json is the sole override here
+        const volSlider = document.getElementById('vol');
+        const vol = (cfg.default_volume !== undefined)
+            ? Math.max(0, Math.min(1, cfg.default_volume))
+            : parseFloat(volSlider.value);
+        audio.volume = vol;
+        volSlider.value = vol;
+        volSlider.style.setProperty('--value-percent', `${vol * 100}%`);
+
+        // --- Theme / Colors ---
+        // loadTheme() already applied localStorage values synchronously before this runs.
+        // Only apply config.json values for fields NOT already set by localStorage.
+        if (!localStorage.getItem('fh-mp3-theme') && cfg.theme) {
+            setTheme(cfg.theme);
+        }
+        if (!localStorage.getItem('fh-mp3-accent-custom') && cfg.accent_color) {
+            setAccentColor(cfg.accent_color);
+            const p = document.getElementById('pick-accent');
+            if (p) p.value = cfg.accent_color;
+        }
+        if (!localStorage.getItem('fh-mp3-text-main') && cfg.text_main) {
+            setTextColor('main', cfg.text_main);
+            const p = document.getElementById('pick-text-main');
+            if (p) p.value = cfg.text_main;
+        }
+        if (!localStorage.getItem('fh-mp3-text-dim') && cfg.text_dim) {
+            setTextColor('dim', cfg.text_dim);
+            const p = document.getElementById('pick-text-dim');
+            if (p) p.value = cfg.text_dim;
+        }
+
+        // --- Folder hints ---
+        // If config.json names a folder, try to match it in IndexedDB and auto-reload.
+        // The browser will prompt for permission — this is intentional and expected.
+        if (cfg.music_folder || cfg.playlist_folder) {
+            await applyConfigFolderHints(cfg.music_folder, cfg.playlist_folder);
+        }
+    }
+
+    async function applyConfigFolderHints(musicFolderName, playlistFolderName) {
+        const all = await idbGetAll();
+
+        if (musicFolderName && library.length === 0) {
+            const match = all.find(f =>
+                f.name === musicFolderName && (f.type === 'music' || !f.type)
+            );
+            if (match) {
+                console.debug(`config.json: auto-loading music folder "${musicFolderName}"`);
+                try {
+                    const perm = await match.handle.requestPermission({ mode: 'read' });
+                    if (perm === 'granted') await scanDirectoryHandle(match.handle, match);
+                } catch (e) {
+                    console.warn('Could not auto-load music folder from config:', e.message);
+                    document.getElementById('path-music').innerText =
+                        `📁 ${musicFolderName} (from config.json — reopen manually)`;
                 }
             } else {
-                console.log('config.json not found, using default settings.');
+                document.getElementById('path-music').innerText =
+                    `📁 ${musicFolderName} (from config.json — not found in recent folders)`;
             }
-        } catch (error) {
-            // This error often happens when opening the page as a local file (file://)
-            // due to browser security. Running a local server is recommended.
-            console.error('Error loading or parsing config.json:', error);
-        } finally {
-            // Always apply the volume, either from config or default HTML value
-            const volSlider = document.getElementById('vol');
-            audio.volume = volValue;
-            volSlider.value = volValue;
-            volSlider.style.setProperty('--value-percent', `${volValue * 100}%`);
         }
+
+        // Playlists are persisted in localStorage — no need to re-scan the folder on startup.
+        // Just show the folder name as a hint so the user knows it's configured.
+        if (playlistFolderName) {
+            const statusEl = document.getElementById('path-playlists');
+            if (statusEl && statusEl.innerText === 'No playlist folder selected') {
+                statusEl.innerText = `🗂 ${playlistFolderName} (from config.json)`;
+            }
+        }
+    }
+
+    async function loadConfigFile(file) {
+        const statusEl = document.getElementById('config-export-status');
+        if (!file) return;
+        try {
+            const text = await file.text();
+            const cfg = JSON.parse(text);
+
+            // Volume
+            if (cfg.default_volume !== undefined) {
+                const vol = Math.max(0, Math.min(1, cfg.default_volume));
+                const volSlider = document.getElementById('vol');
+                audio.volume = vol;
+                volSlider.value = vol;
+                volSlider.style.setProperty('--value-percent', `${vol * 100}%`);
+            }
+
+            // Theme & colors — write to localStorage so they persist, then apply
+            if (cfg.theme)        { localStorage.setItem('fh-mp3-theme', cfg.theme); setTheme(cfg.theme); }
+            if (cfg.accent_color) { localStorage.setItem('fh-mp3-accent-custom', cfg.accent_color); setAccentColor(cfg.accent_color); const p = document.getElementById('pick-accent'); if (p) p.value = cfg.accent_color; }
+            if (cfg.text_main)    { setTextColor('main', cfg.text_main); const p = document.getElementById('pick-text-main'); if (p) p.value = cfg.text_main; }
+            if (cfg.text_dim)     { setTextColor('dim',  cfg.text_dim);  const p = document.getElementById('pick-text-dim');  if (p) p.value = cfg.text_dim; }
+
+            // Folder hints (music only — playlists live in localStorage)
+            if (cfg.music_folder || cfg.playlist_folder) {
+                await applyConfigFolderHints(cfg.music_folder, cfg.playlist_folder);
+            }
+
+            statusEl.style.display = 'block';
+            statusEl.textContent = `✓ Loaded "${file.name}" at ${new Date().toLocaleTimeString()}`;
+        } catch (e) {
+            statusEl.style.display = 'block';
+            statusEl.textContent = `✕ Failed to parse config: ${e.message}`;
+        }
+        // Reset input so the same file can be re-selected
+        document.getElementById('config-import-input').value = '';
+        setTimeout(() => { statusEl.style.display = 'none'; }, 5000);
+    }
+
+    async function exportConfig() {
+        const volSlider = document.getElementById('vol');
+
+        // Theme & colors: read live runtime values (localStorage = source of truth for these)
+        const theme       = localStorage.getItem('fh-mp3-theme')        || 'default';
+        const accentCustom = localStorage.getItem('fh-mp3-accent-custom') || undefined;
+        const textMain    = localStorage.getItem('fh-mp3-text-main')     || undefined;
+        const textDim     = localStorage.getItem('fh-mp3-text-dim')      || undefined;
+
+        // Most-recently used folder names from IndexedDB
+        const all = await idbGetAll();
+        const musicEntries    = all.filter(f => f.type === 'music' || !f.type)
+                                   .sort((a, b) => new Date(b.lastOpened) - new Date(a.lastOpened));
+        const playlistEntries = all.filter(f => f.type === 'playlist')
+                                   .sort((a, b) => new Date(b.lastOpened) - new Date(a.lastOpened));
+
+        // Build config — only include optional fields if they have a value
+        const config = {
+            default_volume: parseFloat(parseFloat(volSlider.value).toFixed(2)),
+            theme,
+            ...(accentCustom && { accent_color: accentCustom }),
+            ...(textMain     && { text_main:    textMain }),
+            ...(textDim      && { text_dim:     textDim }),
+            ...(musicEntries[0]    && { music_folder:    musicEntries[0].name }),
+            ...(playlistEntries[0] && { playlist_folder: playlistEntries[0].name }),
+        };
+
+        const json = JSON.stringify(config, null, 2);
+        const blob = new Blob([json], { type: 'application/json' });
+        const url  = URL.createObjectURL(blob);
+        const a    = document.createElement('a');
+        a.href = url; a.download = 'config.json'; a.click();
+        URL.revokeObjectURL(url);
+
+        // Show status
+        const status = document.getElementById('config-export-status');
+        status.style.display = 'block';
+        status.textContent = `✓ Exported at ${new Date().toLocaleTimeString()} — place next to the player HTML file.`;
+        setTimeout(() => { status.style.display = 'none'; }, 4000);
     }
 
 
