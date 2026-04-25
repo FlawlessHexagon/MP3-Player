@@ -1,0 +1,638 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Audio Player</title>
+  <link rel="manifest" href="./manifest.json">
+  <link href="https://fonts.googleapis.com/css2?family=Cascadia+Code:wght@400;700&display=swap" rel="stylesheet">
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <script src="./app.js" defer></script>
+  <style>
+    :root {
+      --bg: #0d0d0d;
+      --bg-panel: #141414;
+      --bg-row: #1a1a1a;
+      --border: #2a2a2a;
+      --text: #e8e8e8;
+      --text-dim: #666666;
+      --accent: #a855f7;
+      --accent-dim: rgba(168, 85, 247, 0.15);
+      --player-h: 72px;
+      --sidebar-w: 240px;
+      --tabbar-h: 48px;
+      --seek-progress: 0%;
+      --volume-progress: 100%;
+    }
+
+    *, *::before, *::after {
+      box-sizing: border-box;
+      border-radius: 0 !important;
+      font-family: 'Cascadia Code', monospace;
+      user-select: none;
+      -webkit-user-select: none;
+    }
+
+    body {
+      margin: 0;
+      padding: 0;
+      background: linear-gradient(180deg, #0d0d0d 0%, #0a0a0a 100%);
+      color: var(--text);
+      height: 100vh;
+      overflow: hidden;
+      display: flex;
+    }
+
+    /* Scrollbars */
+    ::-webkit-scrollbar { width: 4px; height: 4px; }
+    ::-webkit-scrollbar-track { background: var(--bg); }
+    ::-webkit-scrollbar-thumb { background: var(--border); }
+
+    /* Buttons & Inputs */
+    button {
+      background: transparent;
+      border: 1px solid var(--border);
+      color: var(--text-dim);
+      padding: 6px 12px;
+      cursor: pointer;
+      font-size: 13px;
+      transition: border-color 100ms, color 100ms, background 100ms;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      justify-content: center;
+    }
+    button:hover { border-color: var(--accent); color: var(--accent); }
+    button.active { color: var(--accent); background: var(--accent-dim); border-color: var(--accent); }
+    
+    input[type="text"], input[type="search"] {
+      background: transparent;
+      border: 1px solid var(--border);
+      color: var(--text);
+      padding: 8px 12px;
+      font-size: 13px;
+      width: 100%;
+    }
+    input:focus { outline: none; border-color: var(--accent); }
+
+    input[type="range"] {
+      -webkit-appearance: none;
+      width: 100%;
+      height: 2px;
+      background: transparent;
+      cursor: pointer;
+      position: relative;
+    }
+    input[type="range"]::-webkit-slider-runnable-track {
+      height: 2px;
+      background: linear-gradient(to right, var(--accent) var(--range-progress, 0%), var(--border) var(--range-progress, 0%));
+    }
+    input[type="range"]::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      height: 10px;
+      width: 10px;
+      background: var(--accent);
+      margin-top: -4px;
+    }
+
+    /* Layout */
+    #sidebar {
+      width: var(--sidebar-w);
+      border-right: 1px solid var(--border);
+      display: flex;
+      flex-direction: column;
+      background: var(--bg-panel);
+      z-index: 10;
+    }
+    
+    .sidebar-header { padding: 20px; font-weight: 700; color: var(--accent); border-bottom: 1px solid var(--border); }
+    .nav-section { padding: 10px 0; border-bottom: 1px solid var(--border); }
+    .nav-item { padding: 10px 20px; cursor: pointer; color: var(--text-dim); display: flex; justify-content: space-between; align-items: center; }
+    .nav-item:hover { color: var(--text); background: var(--bg-row); }
+    .nav-item.active { color: var(--accent); background: var(--accent-dim); border-right: 2px solid var(--accent); }
+    .playlist-list { overflow-y: auto; flex: 1; }
+
+    #main-content {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      position: relative;
+    }
+
+    #top-bar {
+      padding: 15px 20px;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      gap: 10px;
+      align-items: center;
+      background: var(--bg);
+    }
+    #search-input { flex: 1; max-width: 400px; }
+    
+    #breadcrumb-bar {
+      display: none;
+      width: 100%;
+      border-bottom: 1px solid var(--border);
+      background: var(--bg-panel);
+      padding: 8px 20px;
+      font-size: 11px;
+      color: var(--text-dim);
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .view { display: none; flex: 1; overflow-y: auto; padding-bottom: var(--player-h); }
+    .view.active { display: block; }
+
+    /* Library / Track Rows */
+    .group-header {
+      padding: 10px 20px;
+      font-size: 11px;
+      font-weight: 700;
+      color: var(--text-dim);
+      border-bottom: 1px solid var(--border);
+      background: var(--bg-panel);
+      text-transform: uppercase;
+      pointer-events: none;
+    }
+
+    .track-row {
+      display: grid;
+      grid-template-columns: 4ch 1fr 6ch 6ch;
+      height: 40px;
+      align-items: center;
+      padding: 0 20px;
+      border-bottom: 1px solid var(--border);
+      color: var(--text-dim);
+      font-size: 13px;
+      cursor: pointer;
+    }
+    .track-row:hover { background: var(--bg-row); }
+    .track-row.selected { background: var(--accent-dim); border-left: 2px solid var(--accent); padding-left: 18px; }
+    .track-row.playing { color: var(--text); }
+    .track-row.playing .track-title { color: var(--accent); }
+    .track-title { color: var(--text); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .track-artist { font-size: 11px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .track-info-col { display: flex; flex-direction: column; justify-content: center; overflow: hidden; }
+
+    /* Player Bar */
+    #player-bar {
+      position: fixed;
+      bottom: 0;
+      left: var(--sidebar-w);
+      right: 0;
+      height: var(--player-h);
+      border-top: 1px solid var(--border);
+      background: var(--bg-panel);
+      display: flex;
+      align-items: center;
+      padding: 0 20px;
+      z-index: 20;
+    }
+    .player-left { width: 250px; display: flex; flex-direction: column; overflow: hidden; }
+    .player-title { color: var(--accent); font-weight: 700; font-size: 14px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .player-artist { color: var(--text-dim); font-size: 12px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    
+    .player-center { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 8px; max-width: 500px; margin: 0 auto; }
+    .player-controls { display: flex; gap: 15px; align-items: center; }
+    .control-btn { border: none; padding: 4px; font-size: 18px; }
+    .control-btn:hover { background: transparent; transform: scale(1.1); }
+    .control-btn.active { background: transparent; border: none; }
+    
+    .seek-container { display: flex; align-items: center; gap: 10px; width: 100%; font-size: 11px; color: var(--text-dim); }
+    
+    .player-right { width: 250px; display: flex; flex-direction: column; justify-content: center; align-items: flex-end; gap: 8px; }
+    .volume-slider { width: 100px !important; }
+
+    /* Settings & Help Views */
+    .settings-container { padding: 20px; max-width: 800px; margin: 0 auto; }
+    .settings-card { border: 1px solid var(--border); padding: 20px; margin-bottom: 20px; background: var(--bg-panel); }
+    .settings-card h3 { margin: 0 0 15px 0; color: var(--accent); font-size: 14px; text-transform: uppercase; }
+    .settings-row { display: flex; justify-content: space-between; align-items: center; padding: 10px 0; border-bottom: 1px solid var(--border); }
+    .settings-row:last-child { border-bottom: none; padding-bottom: 0; }
+    
+    .theme-swatches { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 10px; }
+    .theme-swatch { width: 24px; height: 24px; cursor: pointer; border: 1px solid var(--border); }
+    .theme-swatch.active { outline: 1px solid white; outline-offset: 2px; }
+
+    /* Modals & Menus */
+    #context-menu {
+      position: fixed;
+      background: var(--bg-panel);
+      border: 1px solid var(--border);
+      display: none;
+      flex-direction: column;
+      z-index: 100;
+      min-width: 180px;
+    }
+    .ctx-item { padding: 10px 15px; font-size: 13px; cursor: pointer; color: var(--text); border-bottom: 1px solid var(--border); }
+    .ctx-item:last-child { border-bottom: none; }
+    .ctx-item:hover { background: var(--accent); color: var(--bg); }
+
+    .modal-overlay {
+      position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+      background: rgba(0,0,0,0.8);
+      display: none; justify-content: center; align-items: center;
+      z-index: 200;
+    }
+    .modal {
+      background: var(--bg-panel);
+      border: 1px solid var(--border);
+      padding: 20px;
+      width: 100%;
+      max-width: 400px;
+    }
+    .modal h3 { margin: 0 0 15px 0; color: var(--accent); }
+    .modal-actions { display: flex; justify-content: flex-end; gap: 10px; margin-top: 20px; }
+
+    /* Mobile specific elements */
+    #tab-bar { display: none; }
+    #now-playing-sheet { display: none; }
+    .mobile-checkbox { display: none; }
+
+    /* Mobile Layout Overrides */
+    @media (max-width: 767px) {
+      #sidebar { display: none; }
+      #player-bar { left: 0; bottom: var(--tabbar-h); height: 56px; padding: 0 15px; cursor: pointer; }
+      .player-center, .player-right { display: none; }
+      .view { padding-bottom: calc(var(--player-h) + var(--tabbar-h)); }
+      
+      .track-row { height: 52px; grid-template-columns: 3ch 1fr 5ch; padding: 0 15px; }
+      .track-format { display: none; }
+      
+      #tab-bar {
+        display: flex;
+        position: fixed; bottom: 0; left: 0; right: 0;
+        height: var(--tabbar-h);
+        background: var(--bg-panel);
+        border-top: 1px solid var(--border);
+        z-index: 30;
+      }
+      .tab-item {
+        flex: 1; display: flex; justify-content: center; align-items: center;
+        font-size: 12px; font-weight: 700; color: var(--text-dim); cursor: pointer;
+      }
+      .tab-item.active { color: var(--accent); }
+
+      #now-playing-sheet {
+        display: flex;
+        flex-direction: column;
+        position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+        background: var(--bg-panel);
+        z-index: 50;
+        transform: translateY(100%);
+        transition: transform 0.3s ease-out;
+        padding: 20px;
+      }
+      #now-playing-sheet.active { transform: translateY(0); }
+      .sheet-handle { width: 32px; height: 2px; background: var(--border); margin: 0 auto 30px auto; }
+      .sheet-content { flex: 1; display: flex; flex-direction: column; justify-content: center; align-items: center; gap: 30px; }
+      .sheet-title { font-size: 24px; color: var(--accent); text-align: center; font-weight: 700; }
+      .sheet-artist { font-size: 16px; color: var(--text-dim); text-align: center; }
+      .sheet-controls { display: flex; gap: 20px; align-items: center; justify-content: center; width: 100%; }
+      .sheet-controls button { font-size: 24px; padding: 15px; }
+      
+      .mobile-select-mode .mobile-checkbox { display: block; width: 16px; height: 16px; border: 1px solid var(--border); margin-right: 10px; }
+      .mobile-select-mode .track-row.selected .mobile-checkbox { background: var(--accent); border-color: var(--accent); }
+      .mobile-select-mode .track-index { display: none; }
+    }
+  </style>
+</head>
+<body>
+
+  <aside id="sidebar">
+    <div class="sidebar-header">APlayer</div>
+    <div class="nav-section">
+      <div class="nav-item active" data-view="library"><i data-lucide="music"></i> Library</div>
+      <div class="nav-item" data-view="settings"><i data-lucide="settings"></i> Settings</div>
+      <div class="nav-item" data-view="help"><i data-lucide="book-open"></i> Help</div>
+    </div>
+    <div class="nav-section" style="display: flex; justify-content: space-between; align-items: center; padding: 10px 20px; font-size: 11px; color: var(--text-dim);">
+      PLAYLISTS
+      <button id="btn-new-playlist" style="padding: 2px 6px; font-size: 16px;">+</button>
+    </div>
+    <div class="playlist-list" id="sidebar-playlists"></div>
+  </aside>
+
+  <main id="main-content">
+    <header id="top-bar">
+      <input type="search" id="search-input" placeholder="Search title or artist...">
+      <button id="btn-sort-cat" title="Sort Category"><span>Artist</span></button>
+      <button id="btn-sort-order" title="Sort Order"><span>A→Z</span></button>
+      <button id="btn-mobile-select" style="display:none;"><i data-lucide="check-square"></i></button>
+    </header>
+    
+    <div id="breadcrumb-bar">
+      <div>PLAYLIST &nbsp;›&nbsp; <span id="breadcrumb-playlist-name" style="color: var(--accent); font-weight: 700;"></span></div>
+      <button id="btn-breadcrumb-lib" style="padding: 2px 6px; font-size: 11px;">← Library</button>
+    </div>
+
+    <section id="view-library" class="view active">
+      <div id="track-list"></div>
+    </section>
+
+    <section id="view-settings" class="view">
+      <div class="settings-container">
+        
+        <div class="settings-card">
+          <h3>Music Source</h3>
+          <div class="settings-row" id="desktop-fsa-ui">
+            <button id="btn-open-folder"><i data-lucide="folder-open"></i> Open Folder</button>
+            <span id="current-folder-name" style="font-size: 12px; color: var(--text-dim);">No folder loaded</span>
+          </div>
+          <div class="settings-row" id="mobile-file-ui" style="display:none;">
+            <label tabindex="0" style="cursor:pointer; display:inline-flex; align-items:center; gap:6px; border:1px solid var(--border); padding:6px 12px; font-size:13px; color:var(--text-dim);">
+              <i data-lucide="file-audio"></i> Select Files
+              <input type="file" id="file-input" multiple accept="audio/*" style="display:none;">
+            </label>
+            <span id="mobile-file-count" style="font-size: 12px; color: var(--text-dim);">0 files loaded</span>
+          </div>
+          <div style="margin-top: 15px; padding-top: 15px; border-top: 1px solid var(--border);">
+            <div style="font-size: 11px; color: var(--text-dim); margin-bottom: 10px;">RECENT FOLDERS</div>
+            <div id="recent-folders-list"></div>
+          </div>
+        </div>
+
+        <div class="settings-card">
+          <h3>Audio</h3>
+          
+          <div class="settings-row" style="flex-direction: column; align-items: flex-start; gap: 10px; border-bottom: 1px solid var(--border); padding-bottom: 20px; margin-bottom: 10px;">
+            <div style="display:flex; justify-content: space-between; width: 100%; align-items: center;">
+              <span style="font-size:13px;">Loudness Control</span>
+              <div style="display:flex; align-items: center; gap: 8px;">
+                <button id="btn-loud-off" class="loud-btn active" style="padding: 4px 10px; font-size: 12px;">OFF</button>
+                <button id="btn-loud-norm" class="loud-btn" style="padding: 4px 10px; font-size: 12px;">NORMALIZE</button>
+                <button id="btn-loud-limit" class="loud-btn" style="padding: 4px 10px; font-size: 12px;">LIMIT</button>
+              </div>
+            </div>
+            <span style="font-size:12px; color:var(--text-dim);">Normalize: matches loudness across all tracks. Limit: prevents sudden peaks within a track.</span>
+            <span id="loudness-status" style="font-size:12px; color:var(--accent); display:none;"></span>
+          </div>
+
+          <p style="font-size:13px; color:var(--text-dim); line-height:1.5; margin-bottom:15px; margin-top: 10px;">Stereo width controls the spread of the audio signal. 0.0 is mono, 1.0 is original, 2.0 is exaggerated stereo.</p>
+          <div class="settings-row" style="border:none; padding:0;">
+            <span id="settings-width-label" style="font-size:13px; min-width:80px;">Width: 1.00</span>
+            <input type="range" id="settings-width" min="0" max="2" step="0.01" value="1" style="flex:1; margin:0 15px;">
+            <button id="btn-reset-width"><i data-lucide="rotate-ccw"></i> Reset</button>
+          </div>
+        </div>
+
+        <div class="settings-card">
+          <h3>Playlists</h3>
+          <div class="settings-row" id="desktop-playlist-folder-ui">
+            <button id="btn-open-playlist-folder"><i data-lucide="folder-plus"></i> Open Playlist Folder</button>
+            <span id="playlist-folder-status" style="font-size: 12px; color: var(--text-dim);">Load all .json files in a folder</span>
+          </div>
+          <div class="settings-row">
+            <label tabindex="0" style="cursor:pointer; display:inline-flex; align-items:center; gap:6px; border:1px solid var(--border); padding:6px 12px; font-size:13px; color:var(--text-dim);">
+              <i data-lucide="files"></i> Select Playlist Files
+              <input type="file" id="playlist-files-input" multiple accept=".json" style="display:none;">
+            </label>
+            <span id="playlist-files-status" style="font-size: 12px; color: var(--text-dim);">Select individual .json files</span>
+          </div>
+          <div style="margin-top: 15px; padding-top: 15px; border-top: 1px solid var(--border);">
+            <div style="font-size: 11px; color: var(--text-dim); margin-bottom: 10px;">BACKUP ALL PLAYLISTS</div>
+            <div style="display:flex; gap:10px;">
+              <button id="btn-export-playlists"><i data-lucide="download"></i> Export All as JSON</button>
+              <label tabindex="0" style="cursor:pointer; display:inline-flex; align-items:center; gap:6px; border:1px solid var(--border); padding:6px 12px; font-size:13px; color:var(--text-dim);">
+                <i data-lucide="upload"></i> Import JSON
+                <input type="file" id="playlist-import-input" accept=".json" style="display:none;">
+              </label>
+            </div>
+          </div>
+        </div>
+
+        <div class="settings-card">
+          <h3>Theme & Configuration</h3>
+          <div class="settings-row">
+            <span style="font-size:13px;">Accent Color Preset</span>
+            <div class="theme-swatches" id="theme-swatches"></div>
+          </div>
+          <div class="settings-row">
+            <span style="font-size:13px;">Custom Accent Color</span>
+            <input type="color" id="color-accent" style="width:40px; height:24px; padding:0; border:1px solid var(--border); background:none; cursor:pointer;">
+          </div>
+          <div class="settings-row">
+            <span style="font-size:13px;">Main Text Color</span>
+            <input type="color" id="color-text-main" style="width:40px; height:24px; padding:0; border:1px solid var(--border); background:none; cursor:pointer;">
+          </div>
+          <div class="settings-row">
+            <span style="font-size:13px;">Dim Text Color</span>
+            <input type="color" id="color-text-dim" style="width:40px; height:24px; padding:0; border:1px solid var(--border); background:none; cursor:pointer;">
+          </div>
+          <div class="settings-row">
+            <button id="btn-reset-colors"><i data-lucide="rotate-ccw"></i> Reset Colors</button>
+            <div style="display:flex; gap:10px;">
+              <button id="btn-export-config"><i data-lucide="download"></i> Export Config</button>
+              <label tabindex="0" style="cursor:pointer; display:inline-flex; align-items:center; gap:6px; border:1px solid var(--border); padding:6px 12px; font-size:13px; color:var(--text-dim);">
+                <i data-lucide="upload"></i> Load Config
+                <input type="file" id="config-import-input" accept=".json" style="display:none;">
+              </label>
+            </div>
+          </div>
+        </div>
+
+        <div class="settings-card">
+          <h3>Shortcuts</h3>
+          <div id="shortcuts-table" style="display: grid; grid-template-columns: 120px 1fr; gap: 10px; font-size: 12px; color: var(--text-dim);"></div>
+        </div>
+
+        <div class="settings-card" style="border-color: #ff4444;">
+          <h3 style="color: #ff4444;">Danger Zone</h3>
+          <p style="font-size:12px; color:var(--text-dim);">Clears all local storage, indexedDB handles, playlists, and settings. Does not touch your actual files.</p>
+          <button id="btn-clear-data" style="border-color: #ff4444; color: #ff4444;">Clear All Data & Reload</button>
+        </div>
+      </div>
+    </section>
+
+    <section id="view-help" class="view">
+      <div class="settings-container">
+        
+        <div class="settings-card">
+          <h3>Audio File Naming</h3>
+          <p style="font-size:13px; color:var(--text-dim); line-height:1.5;">The player reads track title and artist directly from the filename. No metadata tags are used. Files must follow this naming format:</p>
+          <pre style="background:var(--bg); padding:10px; border:1px solid var(--border); color:var(--text); font-size:12px; overflow-x:auto; margin: 10px 0;">Artist Name - Track Title.mp3</pre>
+          <p style="font-size:13px; color:var(--text-dim); line-height:1.5;">Examples:</p>
+          <pre style="background:var(--bg); padding:10px; border:1px solid var(--border); color:var(--text); font-size:12px; overflow-x:auto; margin: 10px 0;">Daft Punk - Get Lucky.mp3
+Aphex Twin - Avril 14th.flac
+The Prodigy - Firestarter.wav</pre>
+          <p style="font-size:13px; color:var(--text-dim); line-height:1.5;">The part before the first " - " (space-hyphen-space) becomes the artist. Everything after becomes the title. If no " - " is found, the entire filename (without extension) is used as the title and the artist is set to "Unknown Artist".</p>
+          <p style="font-size:13px; color:var(--text-dim); line-height:1.5; margin-top:10px;">Supported formats: MP3, FLAC, OGG, WAV, AAC, M4A.</p>
+        </div>
+
+        <div class="settings-card">
+          <h3>Playlist File Format</h3>
+          <p style="font-size:13px; color:var(--text-dim); line-height:1.5;">Each playlist is a single .json file. The filename (without .json) becomes the playlist name inside the app.</p>
+          <p style="font-size:13px; color:var(--text-dim); line-height:1.5; margin-top:10px;">A playlist file contains a flat JSON array of track IDs. Track IDs are generated when you load your music folder — they are not filenames. To build playlists that persist across sessions, use the in-app workflow: load your music, add tracks to a playlist via right-click → "Add to Playlist", then export each playlist individually using the export icon next to its name in the sidebar.</p>
+          <p style="font-size:13px; color:var(--text-dim); line-height:1.5; margin-top:10px;">Example file — "Chill Evening.json":</p>
+          <pre style="background:var(--bg); padding:10px; border:1px solid var(--border); color:var(--text); font-size:12px; overflow-x:auto; margin: 10px 0;">[
+  "a3f9bc12",
+  "d84e1f77",
+  "cc029a31"
+]</pre>
+          <p style="font-size:13px; color:var(--text-dim); line-height:1.5; margin-top:10px;">Alternatively, a playlist file can contain an object where each key is a playlist name and each value is an array of IDs. This is the format produced by "Export All as JSON":</p>
+          <pre style="background:var(--bg); padding:10px; border:1px solid var(--border); color:var(--text); font-size:12px; overflow-x:auto; margin: 10px 0;">{
+  "Chill Evening": ["a3f9bc12", "d84e1f77"],
+  "Workout": ["bb3312ef", "90ac44de"]
+}</pre>
+          <p style="font-size:13px; color:var(--text-dim); line-height:1.5; margin-top:10px;">To load playlists:</p>
+          <ul style="font-size:13px; color:var(--text-dim); line-height:1.5; padding-left:20px; margin-top:5px;">
+            <li>Desktop: Settings → Playlists → Open Playlist Folder (selects a folder of .json files, one per playlist)</li>
+            <li>All browsers: Settings → Playlists → Select Playlist Files (pick one or more .json files manually)</li>
+          </ul>
+        </div>
+
+        <div class="settings-card">
+          <h3>Using the Player</h3>
+          <p style="font-size:13px; color:var(--text); font-weight:700; margin-top:0;">Loading music:</p>
+          <ul style="font-size:13px; color:var(--text-dim); line-height:1.5; padding-left:20px; margin-top:5px;">
+            <li>Desktop (Chrome/Edge): Settings → Music Source → Open Folder. The app scans the folder recursively including subfolders.</li>
+            <li>All browsers: Settings → Music Source → Select Files. Pick individual audio files.</li>
+            <li>Recently opened folders are remembered and can be reloaded in one click from the Recent Folders list.</li>
+          </ul>
+          
+          <p style="font-size:13px; color:var(--text); font-weight:700; margin-top:15px;">Playing tracks:</p>
+          <ul style="font-size:13px; color:var(--text-dim); line-height:1.5; padding-left:20px; margin-top:5px;">
+            <li>Double-click a track to play it immediately.</li>
+            <li>Single-click to select. Right-click (or long-press on mobile) for options.</li>
+            <li>Use Cmd/Ctrl+Click to select multiple tracks. Shift+Click to select a range.</li>
+          </ul>
+
+          <p style="font-size:13px; color:var(--text); font-weight:700; margin-top:15px;">Playlists:</p>
+          <ul style="font-size:13px; color:var(--text-dim); line-height:1.5; padding-left:20px; margin-top:5px;">
+            <li>Click the + button next to PLAYLISTS in the sidebar to create a new playlist.</li>
+            <li>Select tracks, right-click → Add to Playlist to add them.</li>
+            <li>Click the export icon next to a playlist name to download it as a .json file.</li>
+            <li>To remove a track from a playlist, navigate to that playlist, right-click the track → Remove from Playlist.</li>
+          </ul>
+
+          <p style="font-size:13px; color:var(--text); font-weight:700; margin-top:15px;">Controls:</p>
+          <ul style="font-size:13px; color:var(--text-dim); line-height:1.5; padding-left:20px; margin-top:5px;">
+            <li>Shuffle: randomises the play queue. Click again to restore order.</li>
+            <li>Repeat: cycles between Off, Repeat One, and Repeat All.</li>
+            <li>Seek bar: click or drag to jump to any point in the track.</li>
+            <li>Volume: drag the slider on the right of the player bar.</li>
+          </ul>
+
+          <p style="font-size:13px; color:var(--text); font-weight:700; margin-top:15px;">Mobile:</p>
+          <ul style="font-size:13px; color:var(--text-dim); line-height:1.5; padding-left:20px; margin-top:5px;">
+            <li>Tap the player bar to open the full Now Playing sheet.</li>
+            <li>Swipe down on the sheet to dismiss it.</li>
+            <li>Swipe left or right on the sheet to skip tracks.</li>
+            <li>Long-press a track to enter select mode with checkboxes.</li>
+          </ul>
+        </div>
+
+        <div class="settings-card">
+          <h3>Keyboard Shortcuts</h3>
+          <div id="help-shortcuts-table" style="display: grid; grid-template-columns: 120px 1fr; gap: 10px; font-size: 12px; color: var(--text-dim);"></div>
+        </div>
+
+      </div>
+    </section>
+
+  </main>
+
+  <div id="player-bar">
+    <div class="player-left">
+      <div class="player-title" id="pb-title">No track playing</div>
+      <div class="player-artist" id="pb-artist">--</div>
+    </div>
+    <div class="player-center">
+      <div class="player-controls">
+        <button class="control-btn" id="btn-shuffle" title="Shuffle"><i data-lucide="shuffle"></i></button>
+        <button class="control-btn" id="btn-prev" title="Previous"><i data-lucide="skip-back"></i></button>
+        <button class="control-btn" id="btn-play" title="Play/Pause" style="color: var(--text);"><i data-lucide="play"></i></button>
+        <button class="control-btn" id="btn-next" title="Next"><i data-lucide="skip-forward"></i></button>
+        <button class="control-btn" id="btn-repeat" title="Repeat"><i data-lucide="repeat"></i></button>
+      </div>
+      <div class="seek-container">
+        <span id="pb-time-cur">0:00</span>
+        <input type="range" id="pb-seek" value="0" step="0.1" max="100">
+        <span id="pb-time-dur">0:00</span>
+      </div>
+    </div>
+    <div class="player-right">
+      <div style="display:flex; align-items:center; gap:10px;">
+        <i data-lucide="volume-2" style="width:16px; height:16px; color:var(--text-dim);"></i>
+        <input type="range" id="pb-vol" class="volume-slider" min="0" max="1" step="0.05" value="1">
+      </div>
+      <div style="display:flex; align-items:center; gap:10px;">
+        <span id="pb-width-label" style="font-size:11px; color:var(--text-dim); text-align:right; min-width:65px;">WIDTH 1.00</span>
+        <input type="range" id="pb-width" class="volume-slider" min="0" max="2" step="0.01" value="1">
+      </div>
+    </div>
+  </div>
+
+  <nav id="tab-bar">
+    <div class="tab-item active" data-view="library">LIB</div>
+    <div class="tab-item" id="tab-playlists">PLAYLISTS</div>
+    <div class="tab-item" data-view="settings">SETTINGS</div>
+    <div class="tab-item" data-view="help">HELP</div>
+  </nav>
+
+  <div id="now-playing-sheet">
+    <div class="sheet-handle"></div>
+    <div class="sheet-content">
+      <div style="width: 100%;">
+        <div class="sheet-title" id="sheet-title">No track playing</div>
+        <div class="sheet-artist" id="sheet-artist">--</div>
+      </div>
+      <div class="seek-container" style="max-width: 400px; margin: 0 auto;">
+        <span id="sheet-time-cur">0:00</span>
+        <input type="range" id="sheet-seek" value="0" step="0.1" max="100">
+        <span id="sheet-time-dur">0:00</span>
+      </div>
+      <div class="sheet-controls">
+        <button class="control-btn" id="sheet-btn-shuffle"><i data-lucide="shuffle"></i></button>
+        <button class="control-btn" id="sheet-btn-prev"><i data-lucide="skip-back"></i></button>
+        <button class="control-btn" id="sheet-btn-play" style="color: var(--accent);"><i data-lucide="play" style="width:32px; height:32px;"></i></button>
+        <button class="control-btn" id="sheet-btn-next"><i data-lucide="skip-forward"></i></button>
+        <button class="control-btn" id="sheet-btn-repeat"><i data-lucide="repeat"></i></button>
+      </div>
+    </div>
+  </div>
+
+  <div id="context-menu">
+    <div class="ctx-item" id="ctx-play">Play Selection</div>
+    <div class="ctx-item" id="ctx-add">Add to Playlist...</div>
+    <div class="ctx-item" id="ctx-remove" style="display:none; color:#ff4444;">Remove from Playlist</div>
+  </div>
+
+  <div class="modal-overlay" id="modal-new-playlist">
+    <div class="modal">
+      <h3>New Playlist</h3>
+      <input type="text" id="input-new-playlist" placeholder="Playlist name...">
+      <div class="modal-actions">
+        <button class="btn-cancel">Cancel</button>
+        <button id="btn-create-playlist" style="color:var(--bg); background:var(--accent); border-color:var(--accent);">Create</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal-overlay" id="modal-add-playlist">
+    <div class="modal">
+      <h3>Add to Playlist</h3>
+      <div id="add-playlist-list" style="max-height: 200px; overflow-y: auto; margin-bottom: 15px;"></div>
+      <div class="modal-actions">
+        <button class="btn-cancel">Cancel</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal-overlay" id="modal-import-merge">
+    <div class="modal">
+      <h3>Import Playlists</h3>
+      <p style="font-size:13px; color:var(--text-dim); margin-bottom:15px;">How would you like to import the playlists?</p>
+      <div style="display:flex; flex-direction:column; gap:10px;">
+        <button id="btn-import-merge">Merge with existing</button>
+        <button id="btn-import-replace" style="border-color:#ff4444; color:#ff4444;">Replace all existing</button>
+      </div>
+      <div class="modal-actions">
+        <button class="btn-cancel">Cancel</button>
+      </div>
+    </div>
+  </div>
+
+</body>
+</html>
